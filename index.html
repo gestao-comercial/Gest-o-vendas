@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão e Vendas</title>
+
+  <!-- CONFIGURAÇÕES DE PWA (MANIFEST & TEMA) -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gestão App">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+
+  <!-- Manifest incorporado diretamente -->
+  <link rel="manifest" href='data:application/manifest+json,{
+    "name": "Sistema de Gestão e Vendas",
+    "short_name": "Gestão",
+    "description": "Aplicativo de Gestão de Vendas e Estoque",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#f1f5f9",
+    "theme_color": "#0f172a",
+    "icons": [
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }'>
+
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; -webkit-user-select: none; user-select: none; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: 40px auto; }
+    .card-large { max-width: 1000px; margin: 10px auto; }
+    
+    /* Abas de Login/Navegação */
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+    .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: #64748b; }
+    .tab.ativa { color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; }
+
+    input, select { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; -webkit-user-select: text; user-select: text; }
+    
+    button { width: 100%; padding: 11px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .btn-blue { background: #2563eb; color: white; }
+    .btn-green { background: #16a34a; color: white; }
+    .btn-orange { background: #ea580c; color: white; }
+    .btn-red { background: #dc2626; color: white; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; display: inline-block; }
+
+    .escondido { display: none !important; }
+    .msg-erro { color: #dc2626; font-size: 13px; font-weight: bold; text-align: center; margin-top: 10px; }
+
+    /* Layout do App */
+    .header-app { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px; }
+    .resumo-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .box { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }
+    .box h4 { margin: 0 0 5px 0; color: #64748b; font-size: 13px; }
+    .box p { margin: 0; font-size: 20px; font-weight: bold; color: #0f172a; }
+
+    .secao { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+    .secao h3 { margin-top: 0; font-size: 16px; color: #0f172a; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    th { background: #0f172a; color: white; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= TELA DE LOGIN / PRIMEIRA ATIVAÇÃO ================= -->
+  <div id="tela-login" class="card">
+    <h2 style="text-align: center; margin-top: 0;">📦 Acesso ao Sistema</h2>
+    
+    <div class="tabs">
+      <div id="tab1" class="tab ativa" onclick="mudarAbaLogin('login')">Entrar</div>
+      <div id="tab2" class="tab" onclick="mudarAbaLogin('cadastro')">Primeiro Acesso</div>
+    </div>
+
+    <!-- Login Habitual -->
+    <div id="form-login">
+      <label>Usuário / Login:</label>
+      <input type="text" id="loginUsuario" placeholder="Seu Usuário">
+      <label>Senha:</label>
+      <input type="password" id="senhaUsuario" placeholder="Sua Senha">
+      <button class="btn-blue" onclick="entrarComSenha()">Entrar no Sistema</button>
+    </div>
+
+    <!-- Ativação / Primeiro Acesso -->
+    <div id="form-cadastro" class="escondido">
+      <label>Código de Ativação (Gerado no ADM):</label>
+      <input type="text" id="cadCodigo" placeholder="Ex: CAD-84A2" style="text-transform: uppercase;">
+      <label>Crie seu Usuário / Login:</label>
+      <input type="text" id="cadLogin" placeholder="Ex: tiozin">
+      <label>Crie sua Senha:</label>
+      <input type="password" id="cadSenha" placeholder="Sua Senha">
+      <button class="btn-green" onclick="cadastrarEAtivar()">Ativar Minha Conta</button>
+    </div>
+
+    <div id="msgErro" class="msg-erro escondido"></div>
+  </div>
+
+
+  <!-- ================= TELA PRINCIPAL DO SISTEMA ================= -->
+  <div id="tela-app" class="card card-large escondido">
+    
+    <!-- Cabeçalho -->
+    <div class="header-app">
+      <div>
+        <h2 style="margin: 0; color: #0f172a;">💼 Gestão de Vendas e Estoque</h2>
+        <span id="infoUsuario" style="font-size: 13px; color: #64748b;"></span>
+      </div>
+      <button class="btn-red btn-sm" onclick="deslogar()">🚪 Sair</button>
+    </div>
+
+    <!-- Menu de Navegação do App -->
+    <div class="tabs">
+      <div id="menuEstoque" class="tab ativa" onclick="mudarAbaApp('estoque')">📦 Estoque</div>
+      <div id="menuVendedores" class="tab" onclick="mudarAbaApp('vendedores')">👥 Vendedores</div>
+      <div id="menuVendas" class="tab" onclick="mudarAbaApp('vendas')">🛒 Registrar Venda</div>
+      <div id="menuRelatorio" class="tab" onclick="mudarAbaApp('relatorio')">📊 Comissões & Vendas</div>
+    </div>
+
+    <!-- ================= ABA 1: ESTOQUE ================= -->
+    <div id="aba-estoque">
+      <div class="resumo-cards">
+        <div class="box">
+          <h4>Total de Produtos</h4>
+          <p id="totalProdutos">0</p>
+        </div>
+        <div class="box">
+          <h4>Itens em Estoque</h4>
+          <p id="totalItens">0 UN</p>
+        </div>
+        <div class="box">
+          <h4>Valor Total do Estoque</h4>
+          <p id="valorTotalEstoque" style="color: #16a34a;">R$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="secao">
+        <h3>➕ Cadastrar Produto</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+          <div>
+            <label style="font-size: 12px;">Nome do Produto:</label>
+            <input type="text" id="pNome" placeholder="Ex: Coca-Cola 2L">
+          </div>
+          <div>
+            <label style="font-size: 12px;">Quantidade:</label>
+            <input type="number" id="pQtd" placeholder="Ex: 50">
+          </div>
+          <div>
+            <label style="font-size: 12px;">Preço Custo (R$):</label>
+            <input type="number" id="pCusto" step="0.01" placeholder="Ex: 5.50">
+          </div>
+          <div>
+            <label style="font-size: 12px;">Preço Venda (R$):</label>
+            <input type="number" id="pVenda" step="0.01" placeholder="Ex: 10.00">
+          </div>
+        </div>
+        <button class="btn-green" onclick="salvarProduto()">💾 Cadastrar Produto</button>
+      </div>
+
+      <h3>📋 Estoque Atual</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Qtd Disponível</th>
+              <th>Custo Un.</th>
+              <th>Venda Un.</th>
+              <th>Total em Est.</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaEstoque">
+            <tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= ABA 2: VENDEDORES ================= -->
+    <div id="aba-vendedores" class="escondido">
+      <div class="secao">
+        <h3>👥 Cadastrar Vendedor / Atendente</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+          <div>
+            <label style="font-size: 12px;">Nome do Vendedor:</label>
+            <input type="text" id="vNome" placeholder="Ex: Carlos Silva">
+          </div>
+          <div>
+            <label style="font-size: 12px;">Comissão (%):</label>
+            <input type="number" id="vComissao" step="0.1" placeholder="Ex: 5">
+          </div>
+        </div>
+        <button class="btn-green" onclick="salvarVendedor()">💾 Cadastrar Vendedor</button>
+      </div>
+
+      <h3>👥 Vendedores Cadastrados</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Comissão Padrão</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaVendedores">
+            <tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= ABA 3: REGISTRAR VENDA ================= -->
+    <div id="aba-vendas" class="escondido">
+      <div class="secao">
+        <h3>🛒 Registrar Nova Venda</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+          <div>
+            <label style="font-size: 12px;">Selecione o Vendedor:</label>
+            <select id="vendaVendedor"></select>
+          </div>
+          <div>
+            <label style="font-size: 12px;">Selecione o Produto:</label>
+            <select id="vendaProduto" onchange="atualizarPrecoVenda()"></select>
+          </div>
+          <div>
+            <label style="font-size: 12px;">Quantidade Vendida:</label>
+            <input type="number" id="vendaQtd" value="1" min="1">
+          </div>
+          <div>
+            <label style="font-size: 12px;">Preço Un. (R$):</label>
+            <input type="number" id="vendaPrecoUn" step="0.01" readonly style="background: #e2e8f0;">
+          </div>
+        </div>
+        <button class="btn-blue" onclick="concluirVenda()">✅ Concluir Venda</button>
+      </div>
+    </div>
+
+    <!-- ================= ABA 4: RELATÓRIOS & COMISSÕES ================= -->
+    <div id="aba-relatorio" class="escondido">
+      <div class="resumo-cards">
+        <div class="box">
+          <h4>Total em Vendas</h4>
+          <p id="totalVendasValor" style="color: #2563eb;">R$ 0,00</p>
+        </div>
+        <div class="box">
+          <h4>Total de Comissões</h4>
+          <p id="totalComissoesValor" style="color: #ea580c;">R$ 0,00</p>
+        </div>
+      </div>
+
+      <h3>📊 Histórico de Vendas</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Vendedor</th>
+              <th>Produto</th>
+              <th>Qtd</th>
+              <th>Total Venda</th>
+              <th>Comissão</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaHistoricoVendas">
+            <tr><td colspan="7" style="text-align: center;">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const FIREBASE_URL = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
+    let usuarioLogadoKey = null;
+    let monitorSessaoInterval = null;
+
+    let produtosGlobal = {};
+    let vendedoresGlobal = {};
+
+    // --- CONTROLE DAS ABAS DE LOGIN ---
+    function mudarAbaLogin(aba) {
+      document.getElementById("msgErro").classList.add("escondido");
+      if(aba === 'login') {
+        document.getElementById("form-login").classList.remove("escondido");
+        document.getElementById("form-cadastro").classList.add("escondido");
+        document.getElementById("tab1").classList.add("ativa");
+        document.getElementById("tab2").classList.remove("ativa");
+      } else {
+        document.getElementById("form-login").classList.add("escondido");
+        document.getElementById("form-cadastro").classList.remove("escondido");
+        document.getElementById("tab1").classList.remove("ativa");
+        document.getElementById("tab2").classList.add("ativa");
+      }
+    }
+
+    // --- NAVEGAÇÃO INTERNA DO APP ---
+    function mudarAbaApp(aba) {
+      const abas = ['estoque', 'vendedores', 'vendas', 'relatorio'];
+      abas.forEach(a => {
+        document.getElementById(`aba-${a}`).classList.add("escondido");
+        document.getElementById(`menu${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
+      });
+
+      document.getElementById(`aba-${aba}`).classList.remove("escondido");
+      document.getElementById(`menu${aba.charAt(0).toUpperCase() + aba.slice(1)}`).classList.add("ativa");
+
+      if(aba === 'estoque') carregarEstoque();
+      if(aba === 'vendedores') carregarVendedores();
+      if(aba === 'vendas') prepararTelaVendas();
+      if(aba === 'relatorio') carregarRelatorios();
+    }
+
+    // --- AUTENTICAÇÃO E ATIVAÇÃO ---
+    async function cadastrarEAtivar() {
+      const codigo = document.getElementById("cadCodigo").value.trim().toUpperCase();
+      const login = document.getElementById("cadLogin").value.trim();
+      const senha = document.getElementById("cadSenha").value.trim();
+      const msgErro = document.getElementById("msgErro");
+
+      msgErro.classList.add("escondido");
+
+      if(!codigo || !login || !senha) {
+        msgErro.innerText = "Preencha Código, Usuário e Senha!";
+        msgErro.classList.remove("escondido");
+        return;
+      }
+
+      try {
+        const resCod = await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`);
+        const dadosCod = await resCod.json();
+
+        if(!dadosCod || dadosCod.usado) {
+          msgErro.innerText = "❌ Código inválido ou já utilizado!";
+          msgErro.classList.remove("escondido");
+          return;
+        }
+
+        const expiraEm = new Date();
+        expiraEm.setDate(expiraEm.getDate() + (dadosCod.dias || 30));
+
+        const userKey = login.replace(/[^a-zA-Z0-9]/g, "_");
+        await fetch(`${FIREBASE_URL}/usuarios/${userKey}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            login: login,
+            senha: senha,
+            status: "ativo",
+            expiraEm: expiraEm.toISOString()
+          })
+        });
+
+        await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usado: true, usadoPor: login })
+        });
+
+        alert("Conta criada com sucesso! Faça login para continuar.");
+        document.getElementById("loginUsuario").value = login;
+        mudarAbaLogin('login');
+
+      } catch(e) {
+        msgErro.innerText = "Erro ao conectar com o banco.";
+        msgErro.classList.remove("escondido");
+      }
+    }
+
+    async function entrarComSenha() {
+      const login = document.getElementById("loginUsuario").value.trim();
+      const senha = document.getElementById("senhaUsuario").value.trim();
+      const msgErro = document.getElementById("msgErro");
+
+      msgErro.classList.add("escondido");
+
+      if(!login || !senha) {
+        msgErro.innerText = "Informe o login e a senha!";
+        msgErro.classList.remove("escondido");
+        return;
+      }
+
+      try {
+        const userKey = login.replace(/[^a-zA-Z0-9]/g, "_");
+        const res = await fetch(`${FIREBASE_URL}/usuarios/${userKey}.json`);
+        const u = await res.json();
+
+        if(!u || u.senha !== senha) {
+          msgErro.innerText = "❌ Usuário ou senha incorretos!";
+          msgErro.classList.remove("escondido");
+          return;
+        }
+
+        if(u.status === "bloqueado") {
+          msgErro.innerText = "⛔ Sua conta foi bloqueada pelo ADM!";
+          msgErro.classList.remove("escondido");
+          return;
+        }
+
+        if(new Date() > new Date(u.expiraEm)) {
+          msgErro.innerText = "⌛ Seu período de acesso expirou!";
+          msgErro.classList.remove("escondido");
+          return;
+        }
+
+        usuarioLogadoKey = userKey;
+        document.getElementById("infoUsuario").innerText = `Usuário: ${u.login} | Expira em: ${new Date(u.expiraEm).toLocaleDateString("pt-BR")}`;
+        
+        document.getElementById("tela-login").classList.add("escondido");
+        document.getElementById("tela-app").classList.remove("escondido");
+
+        carregarEstoque();
+        iniciarMonitoramentoSessao();
+
+      } catch(e) {
+        msgErro.innerText = "Erro de conexão com o banco.";
+        msgErro.classList.remove("escondido");
+      }
+    }
+
+    // --- MONITORAMENTO EM TEMPO REAL (DESLOGA SE FOR BLOQUEADO) ---
+    function iniciarMonitoramentoSessao() {
+      if (monitorSessaoInterval) clearInterval(monitorSessaoInterval);
+
+      monitorSessaoInterval = setInterval(async () => {
+        if (!usuarioLogadoKey) return;
+
+        try {
+          const res = await fetch(`${FIREBASE_URL}/usuarios/${usuarioLogadoKey}.json`);
+          const u = await res.json();
+
+          // Se usuário foi deletado, bloqueado ou expirou
+          if (!u || u.status === "bloqueado" || new Date() > new Date(u.expiraEm)) {
+            deslogar("⛔ Sua conta foi bloqueada ou expirou pelo Administrador!");
+          }
+        } catch (e) {
+          console.error("Erro ao verificar status da sessão:", e);
+        }
+      }, 5000); // Checa a cada 5 segundos
+    }
+
+    function deslogar(mensagemAlert) {
+      if (monitorSessaoInterval) clearInterval(monitorSessaoInterval);
+      usuarioLogadoKey = null;
+
+      if (mensagemAlert) alert(mensagemAlert);
+
+      document.getElementById("tela-app").classList.add("escondido");
+      document.getElementById("tela-login").classList.remove("escondido");
+      
+      const msgErro = document.getElementById("msgErro");
+      msgErro.innerText = mensagemAlert || "";
+      if (mensagemAlert) msgErro.classList.remove("escondido");
+    }
+
+    // --- MÓDULO 1: ESTOQUE ---
+    async function salvarProduto() {
+      const nome = document.getElementById("pNome").value.trim();
+      const qtd = Number(document.getElementById("pQtd").value);
+      const custo = Number(document.getElementById("pCusto").value);
+      const venda = Number(document.getElementById("pVenda").value);
+
+      if(!nome || isNaN(qtd) || isNaN(custo) || isNaN(venda)) {
+        alert("Preencha todos os dados do produto!");
+        return;
+      }
+
+      await fetch(`${FIREBASE_URL}/estoque.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, qtd, custo, venda })
+      });
+
+      document.getElementById("pNome").value = "";
+      document.getElementById("pQtd").value = "";
+      document.getElementById("pCusto").value = "";
+      document.getElementById("pVenda").value = "";
+
+      carregarEstoque();
+    }
+
+    async function carregarEstoque() {
+      const res = await fetch(`${FIREBASE_URL}/estoque.json`);
+      produtosGlobal = (await res.json()) || {};
+      const tabela = document.getElementById("tabelaEstoque");
+      tabela.innerHTML = "";
+
+      let qtdTotalItens = 0, valorTotalEstoque = 0, numProdutos = 0;
+
+      Object.keys(produtosGlobal).forEach(key => {
+        const p = produtosGlobal[key];
+        numProdutos++;
+        qtdTotalItens += p.qtd;
+        const totalLinha = p.qtd * p.venda;
+        valorTotalEstoque += totalLinha;
+
+        tabela.innerHTML += `
+          <tr>
+            <td><strong>${p.nome}</strong></td>
+            <td>${p.qtd} UN</td>
+            <td>R$ ${p.custo.toFixed(2)}</td>
+            <td>R$ ${p.venda.toFixed(2)}</td>
+            <td><strong>R$ ${totalLinha.toFixed(2)}</strong></td>
+            <td><button class="btn-red btn-sm" onclick="excluirItem('estoque', '${key}', carregarEstoque)">🗑️ Excluir</button></td>
+          </tr>
+        `;
+      });
+
+      document.getElementById("totalProdutos").innerText = numProdutos;
+      document.getElementById("totalItens").innerText = `${qtdTotalItens} UN`;
+      document.getElementById("valorTotalEstoque").innerText = `R$ ${valorTotalEstoque.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    }
+
+    // --- MÓDULO 2: VENDEDORES ---
+    async function salvarVendedor() {
+      const nome = document.getElementById("vNome").value.trim();
+      const comissao = Number(document.getElementById("vComissao").value);
+
+      if(!nome || isNaN(comissao)) {
+        alert("Informe o nome e a porcentagem de comissão!");
+        return;
+      }
+
+      await fetch(`${FIREBASE_URL}/vendedores.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, comissao })
+      });
+
+      document.getElementById("vNome").value = "";
+      document.getElementById("vComissao").value = "";
+
+      carregarVendedores();
+    }
+
+    async function carregarVendedores() {
+      const res = await fetch(`${FIREBASE_URL}/vendedores.json`);
+      vendedoresGlobal = (await res.json()) || {};
+      const tabela = document.getElementById("tabelaVendedores");
+      tabela.innerHTML = "";
+
+      Object.keys(vendedoresGlobal).forEach(key => {
+        const v = vendedoresGlobal[key];
+        tabela.innerHTML += `
+          <tr>
+            <td><strong>${v.nome}</strong></td>
+            <td>${v.comissao}%</td>
+            <td><button class="btn-red btn-sm" onclick="excluirItem('vendedores', '${key}', carregarVendedores)">🗑️ Excluir</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- MÓDULO 3: REGISTRAR VENDA ---
+    async function prepararTelaVendas() {
+      const resP = await fetch(`${FIREBASE_URL}/estoque.json`);
+      produtosGlobal = (await resP.json()) || {};
+
+      const resV = await fetch(`${FIREBASE_URL}/vendedores.json`);
+      vendedoresGlobal = (await resV.json()) || {};
+
+      const selectP = document.getElementById("vendaProduto");
+      const selectV = document.getElementById("vendaVendedor");
+
+      selectP.innerHTML = "";
+      selectV.innerHTML = "";
+
+      Object.keys(produtosGlobal).forEach(key => {
+        selectP.innerHTML += `<option value="${key}">${produtosGlobal[key].nome} (${produtosGlobal[key].qtd} em estoque)</option>`;
+      });
+
+      Object.keys(vendedoresGlobal).forEach(key => {
+        selectV.innerHTML += `<option value="${key}">${vendedoresGlobal[key].nome} (${vendedoresGlobal[key].comissao}%)</option>`;
+      });
+
+      atualizarPrecoVenda();
+    }
+
+    function atualizarPrecoVenda() {
+      const pKey = document.getElementById("vendaProduto").value;
+      if(pKey && produtosGlobal[pKey]) {
+        document.getElementById("vendaPrecoUn").value = produtosGlobal[pKey].venda.toFixed(2);
+      }
+    }
+
+    async function concluirVenda() {
+      const pKey = document.getElementById("vendaProduto").value;
+      const vKey = document.getElementById("vendaVendedor").value;
+      const qtdVenda = Number(document.getElementById("vendaQtd").value);
+
+      if(!pKey || !vKey || qtdVenda <= 0) {
+        alert("Selecione um produto, um vendedor e uma quantidade válida!");
+        return;
+      }
+
+      const produto = produtosGlobal[pKey];
+      const vendedor = vendedoresGlobal[vKey];
+
+      if(qtdVenda > produto.qtd) {
+        alert(`Estoque insuficiente! Disponível: ${produto.qtd}`);
+        return;
+      }
+
+      const valorTotalVenda = qtdVenda * produto.venda;
+      const valorComissao = (valorTotalVenda * vendedor.comissao) / 100;
+
+      // 1. Dar baixa no estoque
+      const novaQtd = produto.qtd - qtdVenda;
+      await fetch(`${FIREBASE_URL}/estoque/${pKey}.json`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qtd: novaQtd })
+      });
+
+      // 2. Salvar histórico da venda
+      await fetch(`${FIREBASE_URL}/vendas.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dataHora: new Date().toLocaleString("pt-BR"),
+          vendedorNome: vendedor.nome,
+          produtoNome: produto.nome,
+          qtd: qtdVenda,
+          totalVenda: valorTotalVenda,
+          comissao: valorComissao
+        })
+      });
+
+      alert("✅ Venda realizada com sucesso!");
+      prepararTelaVendas();
+    }
+
+    // --- MÓDULO 4: RELATÓRIOS ---
+    async function carregarRelatorios() {
+      const res = await fetch(`${FIREBASE_URL}/vendas.json`);
+      const vendas = (await res.json()) || {};
+      const tabela = document.getElementById("tabelaHistoricoVendas");
+      tabela.innerHTML = "";
+
+      let totalVendas = 0, totalComissoes = 0;
+
+      Object.keys(vendas).reverse().forEach(key => {
+        const v = vendas[key];
+        totalVendas += v.totalVenda;
+        totalComissoes += v.comissao;
+
+        tabela.innerHTML += `
+          <tr>
+            <td>${v.dataHora}</td>
+            <td><strong>${v.vendedorNome}</strong></td>
+            <td>${v.produtoNome}</td>
+            <td>${v.qtd} UN</td>
+            <td>R$ ${v.totalVenda.toFixed(2)}</td>
+            <td style="color: #ea580c; font-weight: bold;">R$ ${v.comissao.toFixed(2)}</td>
+            <td><button class="btn-red btn-sm" onclick="excluirItem('vendas', '${key}', carregarRelatorios)">🗑️ Excluir</button></td>
+          </tr>
+        `;
+      });
+
+      document.getElementById("totalVendasValor").innerText = `R$ ${totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+      document.getElementById("totalComissoesValor").innerText = `R$ ${totalComissoes.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    }
+
+    // --- FUNÇÃO AUXILIAR DE EXCLUSÃO ---
+    async function excluirItem(caminho, key, callback) {
+      if(confirm("Confirmar exclusão?")) {
+        await fetch(`${FIREBASE_URL}/${caminho}/${key}.json`, { method: "DELETE" });
+        if(callback) callback();
+      }
+    }
+
+    // --- REGISTRO AUTOMÁTICO DO SERVICE WORKER PWA ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swCode = `
+          self.addEventListener('install', (e) => self.skipWaiting());
+          self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+          self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
+        `;
+        const blob = new Blob([swCode], { type: 'text/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl)
+          .then(() => console.log('PWA Service Worker Ativo!'))
+          .catch(err => console.error('Erro ao registrar PWA:', err));
+      });
+    }
+  </script>
+</body>
+</html>
+
