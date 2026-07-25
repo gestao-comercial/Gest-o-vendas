@@ -256,8 +256,8 @@
     </div>
     
     <div class="tabs">
-      <div id="tab1" class="tab ativa" onclick="mudarAbaLogin('login', this)">Entrar</div>
-      <div id="tab2" class="tab" onclick="mudarAbaLogin('cadastro', this)">Primeiro Acesso</div>
+      <div id="tab1" class="tab ativa" onclick="mudarAbaLogin('login')">Entrar</div>
+      <div id="tab2" class="tab" onclick="mudarAbaLogin('cadastro')">Primeiro Acesso</div>
     </div>
 
     <!-- Login Habitual -->
@@ -563,349 +563,6 @@
         mudarAbaLogin('login');
 
       } catch(e) {
-      
-  <style>
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; -webkit-user-select: none; user-select: none; }
-    
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: 40px auto; }
-    .card-large { max-width: 1000px; margin: 10px auto; }
-    
-    /* Abas de Login/Navegação */
-    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
-    .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: #64748b; }
-    .tab.ativa { color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; }
-
-    input, select { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; -webkit-user-select: text; user-select: text; }
-    
-    button { width: 100%; padding: 11px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
-    .btn-blue { background: #2563eb; color: white; }
-    .btn-green { background: #16a34a; color: white; }
-    .btn-orange { background: #ea580c; color: white; }
-    .btn-red { background: #dc2626; color: white; }
-    .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; display: inline-block; }
-
-    .escondido { display: none !important; }
-    .msg-erro { color: #dc2626; font-size: 13px; font-weight: bold; text-align: center; margin-top: 10px; }
-
-    /* Layout do App */
-    .header-app { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px; }
-    .resumo-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
-    .box { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }
-    .box h4 { margin: 0 0 5px 0; color: #64748b; font-size: 13px; }
-    .box p { margin: 0; font-size: 20px; font-weight: bold; color: #0f172a; }
-
-    .secao { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
-    .secao h3 { margin-top: 0; font-size: 16px; color: #0f172a; }
-
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-    th { background: #0f172a; color: white; }
-  </style>
-</head>
-<body>
-
-  <!-- ================= TELA DE LOGIN / PRIMEIRA ATIVAÇÃO ================= -->
-  <div id="tela-login" class="card">
-    <h2 style="text-align: center; margin-top: 0;">📦 Acesso ao Sistema</h2>
-    
-    <div class="tabs">
-      <div id="tab1" class="tab ativa" onclick="mudarAbaLogin('login')">Entrar</div>
-      <div id="tab2" class="tab" onclick="mudarAbaLogin('cadastro')">Primeiro Acesso</div>
-    </div>
-
-    <!-- Login Habitual -->
-    <div id="form-login">
-      <label>Usuário / Login:</label>
-      <input type="text" id="loginUsuario" placeholder="Seu Usuário">
-      <label>Senha:</label>
-      <input type="password" id="senhaUsuario" placeholder="Sua Senha">
-      <button class="btn-blue" onclick="entrarComSenha()">Entrar no Sistema</button>
-    </div>
-
-    <!-- Ativação / Primeiro Acesso -->
-    <div id="form-cadastro" class="escondido">
-      <label>Código de Ativação (Gerado no ADM):</label>
-      <input type="text" id="cadCodigo" placeholder="Ex: CAD-84A2" style="text-transform: uppercase;">
-      <label>Crie seu Usuário / Login:</label>
-      <input type="text" id="cadLogin" placeholder="Ex: tiozin">
-      <label>Crie sua Senha:</label>
-      <input type="password" id="cadSenha" placeholder="Sua Senha">
-      <button class="btn-green" onclick="cadastrarEAtivar()">Ativar Minha Conta</button>
-    </div>
-
-    <div id="msgErro" class="msg-erro escondido"></div>
-  </div>
-
-
-  <!-- ================= TELA PRINCIPAL DO SISTEMA ================= -->
-  <div id="tela-app" class="card card-large escondido">
-    
-    <!-- Cabeçalho -->
-    <div class="header-app">
-      <div>
-        <h2 style="margin: 0; color: #0f172a;">💼 Gestão de Vendas e Estoque</h2>
-        <span id="infoUsuario" style="font-size: 13px; color: #64748b;"></span>
-      </div>
-      <button class="btn-red btn-sm" onclick="deslogar()">🚪 Sair</button>
-    </div>
-
-    <!-- Menu de Navegação do App -->
-    <div class="tabs">
-      <div id="menuEstoque" class="tab ativa" onclick="mudarAbaApp('estoque')">📦 Estoque</div>
-      <div id="menuVendedores" class="tab" onclick="mudarAbaApp('vendedores')">👥 Vendedores</div>
-      <div id="menuVendas" class="tab" onclick="mudarAbaApp('vendas')">🛒 Registrar Venda</div>
-      <div id="menuRelatorio" class="tab" onclick="mudarAbaApp('relatorio')">📊 Comissões & Vendas</div>
-    </div>
-
-    <!-- ================= ABA 1: ESTOQUE ================= -->
-    <div id="aba-estoque">
-      <div class="resumo-cards">
-        <div class="box">
-          <h4>Total de Produtos</h4>
-          <p id="totalProdutos">0</p>
-        </div>
-        <div class="box">
-          <h4>Itens em Estoque</h4>
-          <p id="totalItens">0 UN</p>
-        </div>
-        <div class="box">
-          <h4>Valor Total do Estoque</h4>
-          <p id="valorTotalEstoque" style="color: #16a34a;">R$ 0,00</p>
-        </div>
-      </div>
-
-      <div class="secao">
-        <h3>➕ Cadastrar Produto</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-          <div>
-            <label style="font-size: 12px;">Nome do Produto:</label>
-            <input type="text" id="pNome" placeholder="Ex: Coca-Cola 2L">
-          </div>
-          <div>
-            <label style="font-size: 12px;">Quantidade:</label>
-            <input type="number" id="pQtd" placeholder="Ex: 50">
-          </div>
-          <div>
-            <label style="font-size: 12px;">Preço Custo (R$):</label>
-            <input type="number" id="pCusto" step="0.01" placeholder="Ex: 5.50">
-          </div>
-          <div>
-            <label style="font-size: 12px;">Preço Venda (R$):</label>
-            <input type="number" id="pVenda" step="0.01" placeholder="Ex: 10.00">
-          </div>
-        </div>
-        <button class="btn-green" onclick="salvarProduto()">💾 Cadastrar Produto</button>
-      </div>
-
-      <h3>📋 Estoque Atual</h3>
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Qtd Disponível</th>
-              <th>Custo Un.</th>
-              <th>Venda Un.</th>
-              <th>Total em Est.</th>
-              <th>Ação</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaEstoque">
-            <tr><td colspan="6" style="text-align: center;">Carregando...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ================= ABA 2: VENDEDORES ================= -->
-    <div id="aba-vendedores" class="escondido">
-      <div class="secao">
-        <h3>👥 Cadastrar Vendedor / Atendente</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-          <div>
-            <label style="font-size: 12px;">Nome do Vendedor:</label>
-            <input type="text" id="vNome" placeholder="Ex: Carlos Silva">
-          </div>
-          <div>
-            <label style="font-size: 12px;">Comissão (%):</label>
-            <input type="number" id="vComissao" step="0.1" placeholder="Ex: 5">
-          </div>
-        </div>
-        <button class="btn-green" onclick="salvarVendedor()">💾 Cadastrar Vendedor</button>
-      </div>
-
-      <h3>👥 Vendedores Cadastrados</h3>
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Comissão Padrão</th>
-              <th>Ação</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaVendedores">
-            <tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ================= ABA 3: REGISTRAR VENDA ================= -->
-    <div id="aba-vendas" class="escondido">
-      <div class="secao">
-        <h3>🛒 Registrar Nova Venda</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
-          <div>
-            <label style="font-size: 12px;">Selecione o Vendedor:</label>
-            <select id="vendaVendedor"></select>
-          </div>
-          <div>
-            <label style="font-size: 12px;">Selecione o Produto:</label>
-            <select id="vendaProduto" onchange="atualizarPrecoVenda()"></select>
-          </div>
-          <div>
-            <label style="font-size: 12px;">Quantidade Vendida:</label>
-            <input type="number" id="vendaQtd" value="1" min="1">
-          </div>
-          <div>
-            <label style="font-size: 12px;">Preço Un. (R$):</label>
-            <input type="number" id="vendaPrecoUn" step="0.01" readonly style="background: #e2e8f0;">
-          </div>
-        </div>
-        <button class="btn-blue" onclick="concluirVenda()">✅ Concluir Venda</button>
-      </div>
-    </div>
-
-    <!-- ================= ABA 4: RELATÓRIOS & COMISSÕES ================= -->
-    <div id="aba-relatorio" class="escondido">
-      <div class="resumo-cards">
-        <div class="box">
-          <h4>Total em Vendas</h4>
-          <p id="totalVendasValor" style="color: #2563eb;">R$ 0,00</p>
-        </div>
-        <div class="box">
-          <h4>Total de Comissões</h4>
-          <p id="totalComissoesValor" style="color: #ea580c;">R$ 0,00</p>
-        </div>
-      </div>
-
-      <h3>📊 Histórico de Vendas</h3>
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Data/Hora</th>
-              <th>Vendedor</th>
-              <th>Produto</th>
-              <th>Qtd</th>
-              <th>Total Venda</th>
-              <th>Comissão</th>
-              <th>Ação</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaHistoricoVendas">
-            <tr><td colspan="7" style="text-align: center;">Carregando...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    const FIREBASE_URL = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
-    let usuarioLogadoKey = null;
-    let monitorSessaoInterval = null;
-
-    let produtosGlobal = {};
-    let vendedoresGlobal = {};
-
-    // --- CONTROLE DAS ABAS DE LOGIN ---
-    function mudarAbaLogin(aba) {
-      document.getElementById("msgErro").classList.add("escondido");
-      if(aba === 'login') {
-        document.getElementById("form-login").classList.remove("escondido");
-        document.getElementById("form-cadastro").classList.add("escondido");
-        document.getElementById("tab1").classList.add("ativa");
-        document.getElementById("tab2").classList.remove("ativa");
-      } else {
-        document.getElementById("form-login").classList.add("escondido");
-        document.getElementById("form-cadastro").classList.remove("escondido");
-        document.getElementById("tab1").classList.remove("ativa");
-        document.getElementById("tab2").classList.add("ativa");
-      }
-    }
-
-    // --- NAVEGAÇÃO INTERNA DO APP ---
-    function mudarAbaApp(aba) {
-      const abas = ['estoque', 'vendedores', 'vendas', 'relatorio'];
-      abas.forEach(a => {
-        document.getElementById(`aba-${a}`).classList.add("escondido");
-        document.getElementById(`menu${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
-      });
-
-      document.getElementById(`aba-${aba}`).classList.remove("escondido");
-      document.getElementById(`menu${aba.charAt(0).toUpperCase() + aba.slice(1)}`).classList.add("ativa");
-
-      if(aba === 'estoque') carregarEstoque();
-      if(aba === 'vendedores') carregarVendedores();
-      if(aba === 'vendas') prepararTelaVendas();
-      if(aba === 'relatorio') carregarRelatorios();
-    }
-
-    // --- AUTENTICAÇÃO E ATIVAÇÃO ---
-    async function cadastrarEAtivar() {
-      const codigo = document.getElementById("cadCodigo").value.trim().toUpperCase();
-      const login = document.getElementById("cadLogin").value.trim();
-      const senha = document.getElementById("cadSenha").value.trim();
-      const msgErro = document.getElementById("msgErro");
-
-      msgErro.classList.add("escondido");
-
-      if(!codigo || !login || !senha) {
-        msgErro.innerText = "Preencha Código, Usuário e Senha!";
-        msgErro.classList.remove("escondido");
-        return;
-      }
-
-      try {
-        const resCod = await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`);
-        const dadosCod = await resCod.json();
-
-        if(!dadosCod || dadosCod.usado) {
-          msgErro.innerText = "❌ Código inválido ou já utilizado!";
-          msgErro.classList.remove("escondido");
-          return;
-        }
-
-        const expiraEm = new Date();
-        expiraEm.setDate(expiraEm.getDate() + (dadosCod.dias || 30));
-
-        const userKey = login.replace(/[^a-zA-Z0-9]/g, "_");
-        await fetch(`${FIREBASE_URL}/usuarios/${userKey}.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            login: login,
-            senha: senha,
-            status: "ativo",
-            expiraEm: expiraEm.toISOString()
-          })
-        });
-
-        await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usado: true, usadoPor: login })
-        });
-
-        alert("Conta criada com sucesso! Faça login para continuar.");
-        document.getElementById("loginUsuario").value = login;
-        mudarAbaLogin('login');
-
-      } catch(e) {
         msgErro.innerText = "Erro ao conectar com o banco.";
         msgErro.classList.remove("escondido");
       }
@@ -962,7 +619,6 @@
       }
     }
 
-    // --- MONITORAMENTO EM TEMPO REAL (DESLOGA SE FOR BLOQUEADO) ---
     function iniciarMonitoramentoSessao() {
       if (monitorSessaoInterval) clearInterval(monitorSessaoInterval);
 
@@ -973,14 +629,13 @@
           const res = await fetch(`${FIREBASE_URL}/usuarios/${usuarioLogadoKey}.json`);
           const u = await res.json();
 
-          // Se usuário foi deletado, bloqueado ou expirou
           if (!u || u.status === "bloqueado" || new Date() > new Date(u.expiraEm)) {
             deslogar("⛔ Sua conta foi bloqueada ou expirou pelo Administrador!");
           }
         } catch (e) {
           console.error("Erro ao verificar status da sessão:", e);
         }
-      }, 5000); // Checa a cada 5 segundos
+      }, 5000);
     }
 
     function deslogar(mensagemAlert) {
@@ -1031,7 +686,12 @@
 
       let qtdTotalItens = 0, valorTotalEstoque = 0, numProdutos = 0;
 
-      Object.keys(produtosGlobal).forEach(key => {
+      const keys = Object.keys(produtosGlobal);
+      if(keys.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhum produto cadastrado.</td></tr>`;
+      }
+
+      keys.forEach(key => {
         const p = produtosGlobal[key];
         numProdutos++;
         qtdTotalItens += p.qtd;
@@ -1044,15 +704,22 @@
             <td>${p.qtd} UN</td>
             <td>R$ ${p.custo.toFixed(2)}</td>
             <td>R$ ${p.venda.toFixed(2)}</td>
-            <td><strong>R$ ${totalLinha.toFixed(2)}</strong></td>
-            <td><button class="btn-red btn-sm" onclick="excluirItem('estoque', '${key}', carregarEstoque)">🗑️ Excluir</button></td>
+            <td>R$ ${totalLinha.toFixed(2)}</td>
+            <td><button class="btn-red btn-sm" onclick="deletarProduto('${key}')"><i class="fa-solid fa-trash"></i></button></td>
           </tr>
         `;
       });
 
       document.getElementById("totalProdutos").innerText = numProdutos;
-      document.getElementById("totalItens").innerText = `${qtdTotalItens} UN`;
-      document.getElementById("valorTotalEstoque").innerText = `R$ ${valorTotalEstoque.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+      document.getElementById("totalItens").innerText = qtdTotalItens + " UN";
+      document.getElementById("valorTotalEstoque").innerText = "R$ " + valorTotalEstoque.toFixed(2);
+    }
+
+    async function deletarProduto(key) {
+      if(confirm("Deseja realmente excluir este produto?")) {
+        await fetch(`${FIREBASE_URL}/estoque/${key}.json`, { method: "DELETE" });
+        carregarEstoque();
+      }
     }
 
     // --- MÓDULO 2: VENDEDORES ---
@@ -1061,7 +728,7 @@
       const comissao = Number(document.getElementById("vComissao").value);
 
       if(!nome || isNaN(comissao)) {
-        alert("Informe o nome e a porcentagem de comissão!");
+        alert("Preencha o nome e a comissão do vendedor!");
         return;
       }
 
@@ -1083,38 +750,46 @@
       const tabela = document.getElementById("tabelaVendedores");
       tabela.innerHTML = "";
 
-      Object.keys(vendedoresGlobal).forEach(key => {
+      const keys = Object.keys(vendedoresGlobal);
+      if(keys.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum vendedor cadastrado.</td></tr>`;
+      }
+
+      keys.forEach(key => {
         const v = vendedoresGlobal[key];
         tabela.innerHTML += `
           <tr>
             <td><strong>${v.nome}</strong></td>
             <td>${v.comissao}%</td>
-            <td><button class="btn-red btn-sm" onclick="excluirItem('vendedores', '${key}', carregarVendedores)">🗑️ Excluir</button></td>
+            <td><button class="btn-red btn-sm" onclick="deletarVendedor('${key}')"><i class="fa-solid fa-trash"></i></button></td>
           </tr>
         `;
       });
     }
 
-    // --- MÓDULO 3: REGISTRAR VENDA ---
-    async function prepararTelaVendas() {
-      const resP = await fetch(`${FIREBASE_URL}/estoque.json`);
-      produtosGlobal = (await resP.json()) || {};
+    async function deletarVendedor(key) {
+      if(confirm("Deseja realmente excluir este vendedor?")) {
+        await fetch(`${FIREBASE_URL}/vendedores/${key}.json`, { method: "DELETE" });
+        carregarVendedores();
+      }
+    }
 
+    // --- MÓDULO 3: VENDAS ---
+    async function prepararTelaVendas() {
       const resV = await fetch(`${FIREBASE_URL}/vendedores.json`);
       vendedoresGlobal = (await resV.json()) || {};
-
-      const selectP = document.getElementById("vendaProduto");
-      const selectV = document.getElementById("vendaVendedor");
-
-      selectP.innerHTML = "";
-      selectV.innerHTML = "";
-
-      Object.keys(produtosGlobal).forEach(key => {
-        selectP.innerHTML += `<option value="${key}">${produtosGlobal[key].nome} (${produtosGlobal[key].qtd} em estoque)</option>`;
+      const selV = document.getElementById("vendaVendedor");
+      selV.innerHTML = "";
+      Object.keys(vendedoresGlobal).forEach(k => {
+        selV.innerHTML += `<option value="${k}">${vendedoresGlobal[k].nome}</option>`;
       });
 
-      Object.keys(vendedoresGlobal).forEach(key => {
-        selectV.innerHTML += `<option value="${key}">${vendedoresGlobal[key].nome} (${vendedoresGlobal[key].comissao}%)</option>`;
+      const resP = await fetch(`${FIREBASE_URL}/estoque.json`);
+      produtosGlobal = (await resP.json()) || {};
+      const selP = document.getElementById("vendaProduto");
+      selP.innerHTML = "";
+      Object.keys(produtosGlobal).forEach(k => {
+        selP.innerHTML += `<option value="${k}">${produtosGlobal[k].nome} (Est: ${produtosGlobal[k].qtd})</option>`;
       });
 
       atualizarPrecoVenda();
@@ -1123,40 +798,37 @@
     function atualizarPrecoVenda() {
       const pKey = document.getElementById("vendaProduto").value;
       if(pKey && produtosGlobal[pKey]) {
-        document.getElementById("vendaPrecoUn").value = produtosGlobal[pKey].venda.toFixed(2);
+        document.getElementById("vendaPrecoUn").value = produtosGlobal[pKey].venda;
       }
     }
 
     async function concluirVenda() {
-      const pKey = document.getElementById("vendaProduto").value;
       const vKey = document.getElementById("vendaVendedor").value;
-      const qtdVenda = Number(document.getElementById("vendaQtd").value);
+      const pKey = document.getElementById("vendaProduto").value;
+      const qtdVendida = Number(document.getElementById("vendaQtd").value);
 
-      if(!pKey || !vKey || qtdVenda <= 0) {
-        alert("Selecione um produto, um vendedor e uma quantidade válida!");
+      if(!vKey || !pKey || isNaN(qtdVendida) || qtdVendida <= 0) {
+        alert("Selecione o vendedor, o produto e informe uma quantidade válida!");
         return;
       }
 
       const produto = produtosGlobal[pKey];
-      const vendedor = vendedoresGlobal[vKey];
-
-      if(qtdVenda > produto.qtd) {
-        alert(`Estoque insuficiente! Disponível: ${produto.qtd}`);
+      if(qtdVendida > produto.qtd) {
+        alert(`Estoque insuficiente! Disponível apenas ${produto.qtd} unidades.`);
         return;
       }
 
-      const valorTotalVenda = qtdVenda * produto.venda;
-      const valorComissao = (valorTotalVenda * vendedor.comissao) / 100;
+      const vendedor = vendedoresGlobal[vKey];
+      const totalVenda = qtdVendida * produto.venda;
+      const valorComissao = totalVenda * (vendedor.comissao / 100);
 
-      // 1. Dar baixa no estoque
-      const novaQtd = produto.qtd - qtdVenda;
+      const novaQtd = produto.qtd - qtdVendida;
       await fetch(`${FIREBASE_URL}/estoque/${pKey}.json`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ qtd: novaQtd })
       });
 
-      // 2. Salvar histórico da venda
       await fetch(`${FIREBASE_URL}/vendas.json`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1164,13 +836,14 @@
           dataHora: new Date().toLocaleString("pt-BR"),
           vendedorNome: vendedor.nome,
           produtoNome: produto.nome,
-          qtd: qtdVenda,
-          totalVenda: valorTotalVenda,
+          qtd: qtdVendida,
+          totalVenda: totalVenda,
           comissao: valorComissao
         })
       });
 
-      alert("✅ Venda realizada com sucesso!");
+      alert("Venda realizada com sucesso!");
+      document.getElementById("vendaQtd").value = "1";
       prepararTelaVendas();
     }
 
@@ -1181,12 +854,18 @@
       const tabela = document.getElementById("tabelaHistoricoVendas");
       tabela.innerHTML = "";
 
-      let totalVendas = 0, totalComissoes = 0;
+      let totalVendasGeral = 0;
+      let totalComissoesGeral = 0;
 
-      Object.keys(vendas).reverse().forEach(key => {
+      const keys = Object.keys(vendas);
+      if(keys.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Nenhuma venda registrada.</td></tr>`;
+      }
+
+      keys.forEach(key => {
         const v = vendas[key];
-        totalVendas += v.totalVenda;
-        totalComissoes += v.comissao;
+        totalVendasGeral += v.totalVenda;
+        totalComissoesGeral += v.comissao;
 
         tabela.innerHTML += `
           <tr>
@@ -1195,41 +874,22 @@
             <td>${v.produtoNome}</td>
             <td>${v.qtd} UN</td>
             <td>R$ ${v.totalVenda.toFixed(2)}</td>
-            <td style="color: #ea580c; font-weight: bold;">R$ ${v.comissao.toFixed(2)}</td>
-            <td><button class="btn-red btn-sm" onclick="excluirItem('vendas', '${key}', carregarRelatorios)">🗑️ Excluir</button></td>
+            <td style="color: var(--warning);">R$ ${v.comissao.toFixed(2)}</td>
+            <td><button class="btn-red btn-sm" onclick="deletarVenda('${key}')"><i class="fa-solid fa-trash"></i></button></td>
           </tr>
         `;
       });
 
-      document.getElementById("totalVendasValor").innerText = `R$ ${totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-      document.getElementById("totalComissoesValor").innerText = `R$ ${totalComissoes.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+      document.getElementById("totalVendasValor").innerText = "R$ " + totalVendasGeral.toFixed(2);
+      document.getElementById("totalComissoesValor").innerText = "R$ " + totalComissoesGeral.toFixed(2);
     }
 
-    // --- FUNÇÃO AUXILIAR DE EXCLUSÃO ---
-    async function excluirItem(caminho, key, callback) {
-      if(confirm("Confirmar exclusão?")) {
-        await fetch(`${FIREBASE_URL}/${caminho}/${key}.json`, { method: "DELETE" });
-        if(callback) callback();
+    async function deletarVenda(key) {
+      if(confirm("Deseja realmente excluir este registro de venda?")) {
+        await fetch(`${FIREBASE_URL}/vendas/${key}.json`, { method: "DELETE" });
+        carregarRelatorios();
       }
-    }
-
-    // --- REGISTRO AUTOMÁTICO DO SERVICE WORKER PWA ---
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        const swCode = `
-          self.addEventListener('install', (e) => self.skipWaiting());
-          self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-          self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
-        `;
-        const blob = new Blob([swCode], { type: 'text/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-        
-        navigator.serviceWorker.register(swUrl)
-          .then(() => console.log('PWA Service Worker Ativo!'))
-          .catch(err => console.error('Erro ao registrar PWA:', err));
-      });
     }
   </script>
 </body>
 </html>
-
