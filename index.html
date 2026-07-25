@@ -70,7 +70,6 @@
     th { background: var(--primary); color: white; font-weight: 600; }
     tr:not(:last-child) td { border-bottom: 1px solid var(--border-color); }
 
-    /* Modal Pix / Comprovante */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
     .modal-card { background: white; padding: 25px; border-radius: var(--radius); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
   </style>
@@ -216,7 +215,11 @@
         <p style="font-size: 13px; color: var(--text-muted);">Insira sua chave Pix cadastrada (CPF, CNPJ, E-mail, Telefone ou Chave Aleatória). Ela será usada para gerar o QR Code automático nas vendas Pix dos seus vendedores.</p>
         <label>Sua Chave Pix:</label>
         <input type="text" id="inputChavePix" placeholder="Ex: meuemail@gmail.com ou 11999999999">
-        <button class="btn-green" onclick="salvarChavePix()">Salvar Chave Pix</button>
+        <label>Nome do Beneficiário (Titular da Conta):</label>
+        <input type="text" id="inputNomePix" placeholder="Ex: Joao da Silva">
+        <label>Cidade do Titular:</label>
+        <input type="text" id="inputCidadePix" value="BRASIL" placeholder="Ex: Sao Paulo">
+        <button class="btn-green" onclick="salvarChavePix()">Salvar Dados Pix</button>
       </div>
     </div>
 
@@ -285,7 +288,8 @@
 
   <script>
     const URL_DB = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
-    let adminAtualKey = null, vendAtual = null, prodsG = {}, vendsG = {}, clisG = {}, chavePixAdmin = "";
+    let adminAtualKey = null, vendAtual = null, prodsG = {}, vendsG = {}, clisG = "";
+    let dadosPixAdmin = { chave: "", nome: "", cidade: "BRASIL" };
     let dadosVendaPendente = null;
 
     function mudarAbaLogin(tipo) {
@@ -348,7 +352,7 @@
       if(!u || u.senha !== sen) { err.innerText = "Usuário ou senha inválidos!"; err.classList.remove("escondido"); return; }
       
       adminAtualKey = key;
-      await buscarChavePixAdmin();
+      await buscarDadosPixAdmin();
       document.getElementById("infoAdmin").innerText = `Admin: ${u.login}`;
       document.getElementById("tela-login").classList.add("escondido");
       document.getElementById("painel-admin").classList.remove("escondido");
@@ -377,7 +381,7 @@
       
       vendAtual = achou;
       adminAtualKey = achou.adminKey;
-      await buscarChavePixAdmin();
+      await buscarDadosPixAdmin();
       
       document.getElementById("tituloVendLogado").innerText = `Caixa: ${vendAtual.nome}`;
       document.getElementById("tela-login").classList.add("escondido");
@@ -385,29 +389,45 @@
       preencherPDVVend();
     }
 
-    async function buscarChavePixAdmin() {
-      const res = await fetch(`${URL_DB}/config/${adminAtualKey}/chavePix.json`);
-      chavePixAdmin = (await res.json()) || "";
+    async function buscarDadosPixAdmin() {
+      const res = await fetch(`${URL_DB}/config/${adminAtualKey}.json`);
+      const config = (await res.json()) || {};
+      dadosPixAdmin = {
+        chave: config.chavePix || "",
+        nome: config.nomePix || "Loja",
+        cidade: config.cidadePix || "BRASIL"
+      };
     }
 
     async function salvarChavePix() {
       const chave = document.getElementById("inputChavePix").value.trim();
+      const nomePix = document.getElementById("inputNomePix").value.trim() || "Loja";
+      const cidadePix = document.getElementById("inputCidadePix").value.trim() || "BRASIL";
+      
       if(!chave) { alert("Insira uma chave Pix válida!"); return; }
-      await fetch(`${URL_DB}/config/${adminAtualKey}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({chavePix: chave}) });
-      chavePixAdmin = chave;
-      alert("Chave Pix salva com sucesso!");
+      
+      await fetch(`${URL_DB}/config/${adminAtualKey}.json`, { 
+        method: "PATCH", 
+        headers: {"Content-Type": "application/json"}, 
+        body: JSON.stringify({ chavePix: chave, nomePix: nomePix, cidadePix: cidadePix }) 
+      });
+      
+      dadosPixAdmin = { chave, nome: nomePix, cidade: cidadePix };
+      alert("Dados Pix salvos com sucesso!");
     }
 
     async function carregarConfigPix() {
-      const res = await fetch(`${URL_DB}/config/${adminAtualKey}/chavePix.json`);
-      const val = (await res.json()) || "";
-      document.getElementById("inputChavePix").value = val;
+      const res = await fetch(`${URL_DB}/config/${adminAtualKey}.json`);
+      const config = (await res.json()) || {};
+      document.getElementById("inputChavePix").value = config.chavePix || "";
+      document.getElementById("inputNomePix").value = config.nomePix || "";
+      document.getElementById("inputCidadePix").value = config.cidadePix || "BRASIL";
     }
 
     function deslogar() {
       vendAtual = null;
       adminAtualKey = null;
-      chavePixAdmin = "";
+      dadosPixAdmin = { chave: "", nome: "", cidade: "BRASIL" };
       document.getElementById("painel-admin").classList.add("escondido");
       document.getElementById("painel-vendedor").classList.add("escondido");
       document.getElementById("tela-login").classList.remove("escondido");
@@ -469,7 +489,6 @@
       if(pKey && prodsG[pKey]) document.getElementById(`${pref}Preco`).value = prodsG[pKey].venda;
     }
 
-    // Função central para iniciar a venda (verifica se é Pix ou vai direto)
     function iniciarVenda(origem) {
       let vKey, cKey, pKey, qtd, pag, vNome, vCom;
       if(origem === 'Admin') {
@@ -501,8 +520,8 @@
       dadosVendaPendente = { origem, vKey, cKey, pKey, prodNome: prod.nome, qtd, total, comissao, pag, vNome, clienteNome, clienteTel };
 
       if(pag === 'Pix') {
-        if(!chavePixAdmin) {
-          alert("Aviso: O Administrador ainda não cadastrou a Chave Pix no perfil! A venda prosseguirá sem QR Code dinâmico, mas pode ser configurada na aba 'Pix / Config'.");
+        if(!dadosPixAdmin.chave) {
+          alert("Aviso: O Administrador ainda não cadastrou a Chave Pix no perfil! Vá na aba 'Pix / Config' para preencher.");
         }
         abrirModalPix(total);
       } else {
@@ -510,25 +529,52 @@
       }
     }
 
-    // Gerador de Pix Payload EMV (Padrão Banco Central)
-    function gerarPayloadPix(chave, valor, nomeRecebedor) {
-      nomeRecebedor = nomeRecebedor ? nomeRecebedor.substring(0, 25) : "Loja";
-      function fmt(id, val) {
-        let len = String(val.length).padStart(2, '0');
-        return id + len + val;
+    // Gerador de Pix Payload EMV Oficial (Padrão Banco Central do Brasil)
+    function gerarPayloadPix(chave, valor, nomeRecebedor, cidadeRecebedor) {
+      // Limpeza e normalização de caracteres para evitar erros no banco
+      nomeRecebedor = (nomeRecebedor || "Loja").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25).toUpperCase();
+      cidadeRecebedor = (cidadeRecebedor || "BRASIL").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15).toUpperCase();
+
+      function formatarCampo(id, valorCampo) {
+        let tamanho = String(valorCampo.length).padStart(2, '0');
+        return id + tamanho + valorCampo;
       }
-      let gui = fmt("00", "br.gov.bcb.pix") + fmt("01", chave);
-      let merchantAccount = fmt("26", gui);
-      let mcc = fmt("52", "0000");
-      let currency = fmt("53", "986"); // BRL
-      let amt = fmt("54", valor.toFixed(2));
-      let country = fmt("58", "BR");
-      let name = fmt("59", nomeRecebedor);
-      let city = fmt("60", "BRASIL");
-      let additionalData = fmt("62", fmt("05", "COMPRA"));
-      
-      let payloadWithoutCRC = merchantAccount + mcc + currency + amt + country + name + city + additionalData + "6304";
-      return payloadWithoutCRC + calcularCRC16(payloadWithoutCRC);
+
+      // 00: Payload Format Indicator
+      let payload = formatarCampo("00", "01");
+
+      // 26: Merchant Account Information (GUI + Chave Pix)
+      let gui = formatarCampo("00", "br.gov.bcb.pix");
+      let chavePixCampo = formatarCampo("01", chave);
+      payload += formatarCampo("26", gui + chavePixCampo);
+
+      // 52: Merchant Category Code (0000 = Geral)
+      payload += formatarCampo("52", "0000");
+
+      // 53: Transaction Currency (986 = Real brasileiro BRL)
+      payload += formatarCampo("53", "986");
+
+      // 54: Transaction Amount (Valor com 2 casas decimais)
+      payload += formatarCampo("54", valor.toFixed(2));
+
+      // 58: Country Code (BR)
+      payload += formatarCampo("58", "BR");
+
+      // 59: Merchant Name (Nome do recebedor)
+      payload += formatarCampo("59", nomeRecebedor);
+
+      // 60: Merchant City (Cidade)
+      payload += formatarCampo("60", cidadeRecebedor);
+
+      // 62: Additional Data Field Template (Identificador da transação / Pix Copia e Cola)
+      let txId = formatarCampo("05", "***");
+      payload += formatarCampo("62", txId);
+
+      // 63: CRC16 (Identificador + Tamanho 04)
+      payload += "6304";
+      payload += calcularCRC16(payload);
+
+      return payload;
     }
 
     function calcularCRC16(str) {
@@ -548,7 +594,7 @@
       document.getElementById("qrcode").innerHTML = "";
       document.getElementById("pixValorExibicao").innerText = `Valor: R$ ${valor.toFixed(2)}`;
       
-      let payload = chavePixAdmin ? gerarPayloadPix(chavePixAdmin, valor, "Gestao Comercial") : "PIX_SEM_CHAVE_CADASTRADA";
+      let payload = dadosPixAdmin.chave ? gerarPayloadPix(dadosPixAdmin.chave, valor, dadosPixAdmin.nome, dadosPixAdmin.cidade) : "PIX_SEM_CHAVE_CADASTRADA";
       document.getElementById("pixCopiaCola").value = payload;
 
       new QRCode(document.getElementById("qrcode"), {
@@ -583,7 +629,6 @@
 
       if(d.origem === 'Admin') preencherPDVAdmin(); else preencherPDVVend();
 
-      // Monta o texto do comprovante para o cliente
       let comprovanteTexto = `*RECIBO DE VENDA - GESTÃO COMERCIAL*\n`;
       comprovanteTexto += `--------------------------------\n`;
       comprovanteTexto += `Data: ${new Date().toLocaleString("pt-BR")}\n`;
