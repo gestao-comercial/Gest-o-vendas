@@ -134,7 +134,8 @@
       <div id="mCaixa" class="tab ativa" onclick="mudarAdminTab('caixa')">Caixa</div>
       <div id="mVendas" class="tab" onclick="mudarAdminTab('vendas')">PDV</div>
       <div id="mEstoque" class="tab" onclick="mudarAdminTab('estoque')">Estoque</div>
-      <div id="mClientes" class="tab" onclick="mudarAdminTab('clientes')">Fiado</div>
+      <div id="mClientes" class="tab" onclick="mudarAdminTab('clientes')">Clientes/Fiado</div>
+      <div id="mHistorico" class="tab" onclick="mudarAdminTab('historico')">Histórico 4 Sem.</div>
       <div id="mVendedores" class="tab" onclick="mudarAdminTab('vendedores')">Vendedores</div>
       <div id="mConfig" class="tab" onclick="mudarAdminTab('config')">Pix / Config</div>
       <div id="mRelatorios" class="tab" onclick="mudarAdminTab('relatorios')">Relatórios</div>
@@ -162,6 +163,10 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
           <div><label>Vendedor:</label><select id="pdvVend"></select></div>
           <div><label>Cliente:</label><select id="pdvCli"></select></div>
+          <div>
+            <label>Pesquisar / Filtrar Produto:</label>
+            <input type="text" id="filtroProdAdmin" placeholder="Digite nome ou código..." oninput="filtrarProdutosPDV('Admin')">
+          </div>
           <div><label>Produto:</label><select id="pdvProd" onchange="mudaPrecoAdmin()"></select></div>
           <div><label>Qtd:</label><input type="number" id="pdvQtd" value="1" min="1"></div>
           <div><label>Preço:</label><input type="number" id="pdvPreco" readonly style="background:#E2E8F0"></div>
@@ -175,14 +180,21 @@
       <div class="secao">
         <h3>Cadastrar Produto</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-          <div><label>Nome:</label><input type="text" id="pNome"></div>
+          <div><label>Nome do Produto:</label><input type="text" id="pNome"></div>
+          <div><label>Código de Barras (ou parte):</label><input type="text" id="pCodBarras" placeholder="Ex: 789102..."></div>
           <div><label>Qtd:</label><input type="number" id="pQtd"></div>
           <div><label>Custo:</label><input type="number" id="pCusto" step="0.01"></div>
           <div><label>Venda:</label><input type="number" id="pVenda" step="0.01"></div>
         </div>
         <button class="btn-green" onclick="salvarProduto()">Salvar Produto</button>
       </div>
-      <div class="table-responsive"><table><thead><tr><th>Produto</th><th>Estoque</th><th>Valor Venda</th><th>Ação</th></tr></thead><tbody id="tabelaEstoque"></tbody></table></div>
+      
+      <div style="margin-bottom: 15px;">
+        <label>Pesquisar no Estoque:</label>
+        <input type="text" id="filtroBuscaEstoque" placeholder="Busque por nome ou código de barras..." oninput="carregarEstoque()">
+      </div>
+
+      <div class="table-responsive"><table><thead><tr><th>Produto</th><th>Código de Barras</th><th>Estoque</th><th>Valor Venda</th><th>Ação</th></tr></thead><tbody id="tabelaEstoque"></tbody></table></div>
     </div>
 
     <div id="adm-clientes" class="escondido">
@@ -195,6 +207,32 @@
         <button class="btn-green" onclick="salvarCliente()">Salvar Cliente</button>
       </div>
       <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Telefone</th><th>Débito</th><th>Ação</th></tr></thead><tbody id="tabelaClientes"></tbody></table></div>
+    </div>
+
+    <div id="adm-historico" class="escondido">
+      <div class="secao">
+        <h3>Histórico de Compras por Cliente (Últimas 4 Semanas)</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Selecione o cliente para verificar todos os itens adquiridos recentemente e resolver eventuais problemas.</p>
+        <label>Escolher Cliente:</label>
+        <select id="selectClienteHistorico" onchange="carregarHistoricoCliente()"></select>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Vendedor</th>
+              <th>Produto</th>
+              <th>Qtd</th>
+              <th>Total</th>
+              <th>Forma Pag.</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaHistoricoCliente">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Selecione um cliente acima.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div id="adm-vendedores" class="escondido">
@@ -245,6 +283,10 @@
       <h3>Registrar Venda</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         <div><label>Cliente:</label><select id="vPdvCli"></select></div>
+        <div>
+          <label>Pesquisar / Filtrar Produto:</label>
+          <input type="text" id="filtroProdVend" placeholder="Digite nome ou código..." oninput="filtrarProdutosPDV('Vendedor')">
+        </div>
         <div><label>Produto:</label><select id="vPdvProd" onchange="mudaPrecoVend()"></select></div>
         <div><label>Qtd:</label><input type="number" id="vPdvQtd" value="1" min="1"></div>
         <div><label>Preço:</label><input type="number" id="vPdvPreco" readonly style="background:#E2E8F0"></div>
@@ -303,7 +345,7 @@
     }
 
     function mudarAdminTab(aba) {
-      ['caixa', 'vendas', 'estoque', 'clientes', 'vendedores', 'config', 'relatorios'].forEach(a => {
+      ['caixa', 'vendas', 'estoque', 'clientes', 'historico', 'vendedores', 'config', 'relatorios'].forEach(a => {
         document.getElementById(`adm-${a}`).classList.add("escondido");
         document.getElementById(`m${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
       });
@@ -314,6 +356,7 @@
       if(aba === 'vendas') preencherPDVAdmin();
       if(aba === 'estoque') carregarEstoque();
       if(aba === 'clientes') carregarClientes();
+      if(aba === 'historico') carregarSelectClientesHistorico();
       if(aba === 'vendedores') carregarVendedores();
       if(aba === 'config') carregarConfigPix();
       if(aba === 'relatorios') carregarRelatorios();
@@ -476,9 +519,34 @@
       Object.keys(clisG).forEach(k => selC.innerHTML += `<option value="${k}">${clisG[k].nome}</option>`);
 
       const resP = await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`); prodsG = (await resP.json()) || {};
-      const selP = document.getElementById(`${pref}Prod`); selP.innerHTML = "";
-      Object.keys(prodsG).forEach(k => selP.innerHTML += `<option value="${k}">${prodsG[k].nome} (Est: ${prodsG[k].qtd})</option>`);
+      popularSelectProdutos(pref, prodsG);
+    }
+
+    function popularSelectProdutos(pref, listaProds) {
+      const selP = document.getElementById(`${pref}Prod`); 
+      selP.innerHTML = "";
+      Object.keys(listaProds).forEach(k => {
+        let p = listaProds[k];
+        let codTxt = p.codBarras ? ` [Cód: ${p.codBarras}]` : "";
+        selP.innerHTML += `<option value="${k}">${p.nome}${codTxt} (Est: ${p.qtd})</option>`;
+      });
       atualizaPreco(pref);
+    }
+
+    function filtrarProdutosPDV(origem) {
+      const pref = origem === 'Admin' ? 'pdv' : 'vPdv';
+      const termo = document.getElementById(`filtroProd${origem}`).value.trim().toLowerCase();
+      
+      let filtrados = {};
+      Object.keys(prodsG).forEach(k => {
+        let p = prodsG[k];
+        let nomeMatch = p.nome.toLowerCase().includes(termo);
+        let codMatch = p.codBarras && p.codBarras.toLowerCase().includes(termo);
+        if(nomeMatch || codMatch) {
+          filtrados[k] = p;
+        }
+      });
+      popularSelectProdutos(pref, filtrados);
     }
 
     function mudaPrecoAdmin() { atualizaPreco('pdv'); }
@@ -531,7 +599,6 @@
 
     // Gerador de Pix Payload EMV Oficial (Padrão Banco Central do Brasil)
     function gerarPayloadPix(chave, valor, nomeRecebedor, cidadeRecebedor) {
-      // Limpeza e normalização de caracteres para evitar erros no banco
       nomeRecebedor = (nomeRecebedor || "Loja").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25).toUpperCase();
       cidadeRecebedor = (cidadeRecebedor || "BRASIL").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15).toUpperCase();
 
@@ -540,37 +607,18 @@
         return id + tamanho + valorCampo;
       }
 
-      // 00: Payload Format Indicator
       let payload = formatarCampo("00", "01");
-
-      // 26: Merchant Account Information (GUI + Chave Pix)
       let gui = formatarCampo("00", "br.gov.bcb.pix");
       let chavePixCampo = formatarCampo("01", chave);
       payload += formatarCampo("26", gui + chavePixCampo);
-
-      // 52: Merchant Category Code (0000 = Geral)
       payload += formatarCampo("52", "0000");
-
-      // 53: Transaction Currency (986 = Real brasileiro BRL)
       payload += formatarCampo("53", "986");
-
-      // 54: Transaction Amount (Valor com 2 casas decimais)
       payload += formatarCampo("54", valor.toFixed(2));
-
-      // 58: Country Code (BR)
       payload += formatarCampo("58", "BR");
-
-      // 59: Merchant Name (Nome do recebedor)
       payload += formatarCampo("59", nomeRecebedor);
-
-      // 60: Merchant City (Cidade)
       payload += formatarCampo("60", cidadeRecebedor);
-
-      // 62: Additional Data Field Template (Identificador da transação / Pix Copia e Cola)
       let txId = formatarCampo("05", "***");
       payload += formatarCampo("62", txId);
-
-      // 63: CRC16 (Identificador + Tamanho 04)
       payload += "6304";
       payload += calcularCRC16(payload);
 
@@ -623,8 +671,19 @@
       const prod = prodsG[d.pKey];
 
       await fetch(`${URL_DB}/estoque/${adminAtualKey}/${d.pKey}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({qtd: prod.qtd - d.qtd}) });
+      
+      const timestampServidor = Date.now();
       await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
-        data: new Date().toLocaleString("pt-BR"), vendedor: d.vNome, cliente: d.clienteNome, produto: d.prodNome, total: d.total, comissao: d.comissao, pag: d.pag
+        timestamp: timestampServidor,
+        data: new Date().toLocaleString("pt-BR"), 
+        vendedor: d.vNome, 
+        clienteKey: d.cKey || "",
+        cliente: d.clienteNome, 
+        produto: d.prodNome, 
+        qtd: d.qtd,
+        total: d.total, 
+        comissao: d.comissao, 
+        pag: d.pag
       }) });
 
       if(d.origem === 'Admin') preencherPDVAdmin(); else preencherPDVVend();
@@ -663,21 +722,37 @@
 
     async function salvarProduto() {
       const nome = document.getElementById("pNome").value.trim();
+      const codBarras = document.getElementById("pCodBarras").value.trim();
       const qtd = Number(document.getElementById("pQtd").value);
       const custo = Number(document.getElementById("pCusto").value);
       const venda = Number(document.getElementById("pVenda").value);
       if(!nome) { alert("Preencha o nome!"); return; }
-      await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, qtd, custo, venda}) });
-      document.getElementById("pNome").value = ""; document.getElementById("pQtd").value = ""; document.getElementById("pCusto").value = ""; document.getElementById("pVenda").value = "";
+      
+      await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, codBarras, qtd, custo, venda}) });
+      document.getElementById("pNome").value = ""; 
+      document.getElementById("pCodBarras").value = ""; 
+      document.getElementById("pQtd").value = ""; 
+      document.getElementById("pCusto").value = ""; 
+      document.getElementById("pVenda").value = "";
       carregarEstoque();
     }
 
     async function carregarEstoque() {
-      const res = await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`); prodsG = (await res.json()) || {};
-      const tab = document.getElementById("tabelaEstoque"); tab.innerHTML = "";
+      const res = await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`); 
+      prodsG = (await res.json()) || {};
+      const termo = (document.getElementById("filtroBuscaEstoque")?.value || "").trim().toLowerCase();
+      
+      const tab = document.getElementById("tabelaEstoque"); 
+      tab.innerHTML = "";
+      
       Object.keys(prodsG).forEach(k => {
         let p = prodsG[k];
-        tab.innerHTML += `<tr><td><strong>${p.nome}</strong></td><td>${p.qtd} UN</td><td>R$ ${p.venda.toFixed(2)}</td><td><button class="btn-red btn-sm" onclick="delEstoque('${k}')">Excluir</button></td></tr>`;
+        let nomeMatch = p.nome.toLowerCase().includes(termo);
+        let codMatch = p.codBarras && p.codBarras.toLowerCase().includes(termo);
+        
+        if(!termo || nomeMatch || codMatch) {
+          tab.innerHTML += `<tr><td><strong>${p.nome}</strong></td><td><span style="background:#F1F5F9; padding:3px 6px; border-radius:4px; font-family:monospace;">${p.codBarras || '-'}</span></td><td>${p.qtd} UN</td><td>R$ ${p.venda.toFixed(2)}</td><td><button class="btn-red btn-sm" onclick="delEstoque('${k}')">Excluir</button></td></tr>`;
+        }
       });
     }
     async function delEstoque(k) { await fetch(`${URL_DB}/estoque/${adminAtualKey}/${k}.json`, {method: "DELETE"}); carregarEstoque(); }
@@ -698,6 +773,58 @@
         let c = clisG[k];
         tab.innerHTML += `<tr><td><strong>${c.nome}</strong></td><td>${c.tel||'-'}</td><td style="color:var(--danger)">R$ ${(c.debito||0).toFixed(2)}</td><td>-</td></tr>`;
       });
+    }
+
+    async function carregarSelectClientesHistorico() {
+      const resC = await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`); 
+      const clis = (await resC.json()) || {};
+      const sel = document.getElementById("selectClienteHistorico");
+      sel.innerHTML = `<option value="">-- Selecione um cliente --</option>`;
+      Object.keys(clis).forEach(k => {
+        sel.innerHTML += `<option value="${k}">${clis[k].nome}</option>`;
+      });
+      document.getElementById("tabelaHistoricoCliente").innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Selecione um cliente acima.</td></tr>`;
+    }
+
+    async function carregarHistoricoCliente() {
+      const clienteKey = document.getElementById("selectClienteHistorico").value;
+      const tab = document.getElementById("tabelaHistoricoCliente");
+      tab.innerHTML = "";
+
+      if(!clienteKey) {
+        tab.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Selecione um cliente acima.</td></tr>`;
+        return;
+      }
+
+      const resV = await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`);
+      const vendas = (await resV.json()) || {};
+
+      // Filtro das últimas 4 semanas (28 dias em milissegundos)
+      const agora = Date.now();
+      const limiteQuatroSemanas = agora - (28 * 24 * 60 * 60 * 1000);
+
+      let achados = 0;
+      Object.keys(vendas).forEach(vKey => {
+        let v = vendas[vKey];
+        // Verifica se a venda pertence ao cliente selecionado e está no período de 4 semanas
+        if(v.clienteKey === clienteKey && v.timestamp && v.timestamp >= limiteQuatroSemanas) {
+          achados++;
+          tab.innerHTML += `
+            <tr>
+              <td>${v.data}</td>
+              <td>${v.vendedor}</td>
+              <td><strong>${v.produto}</strong></td>
+              <td>${v.qtd} UN</td>
+              <td>R$ ${v.total.toFixed(2)}</td>
+              <td>${v.pag}</td>
+            </tr>
+          `;
+        }
+      });
+
+      if(achados === 0) {
+        tab.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhuma compra encontrada para este cliente nas últimas 4 semanas.</td></tr>`;
+      }
     }
 
     async function salvarVendedor() {
