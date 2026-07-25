@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Gestão Comercial Profissional</title>
+  <title>Gestão Comercial Pro - Multi-Perfil</title>
 
   <!-- PWA & TEMA -->
   <meta name="theme-color" content="#0F172A">
@@ -20,7 +20,7 @@
 
   <!-- MANIFEST INTEGRADO -->
   <link rel="manifest" href='data:application/manifest+json,{
-    "name": "Gestão Comercial Profissional",
+    "name": "Gestão Comercial Pro",
     "short_name": "GestãoPro",
     "start_url": "./index.html",
     "display": "standalone",
@@ -100,31 +100,41 @@
 </head>
 <body>
 
-  <!-- ================= LOGIN / ATIVAÇÃO ================= -->
+  <!-- ================= TELA DE LOGIN (ADMIN OU VENDEDOR) ================= -->
   <div id="tela-login" class="card">
     <div style="text-align: center; margin-bottom: 20px;">
       <i class="fa-solid fa-shop" style="font-size: 36px; color: var(--accent); margin-bottom: 10px;"></i>
       <h2 style="margin: 0; font-size: 20px;">Gestão Comercial Pro</h2>
-      <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Controle total da sua empresa na palma da mão</p>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Acesse como Administrador ou Vendedor</p>
     </div>
     
     <div class="tabs">
-      <div id="tab1" class="tab ativa" onclick="mudarAbaLogin('login')">Entrar</div>
-      <div id="tab2" class="tab" onclick="mudarAbaLogin('cadastro')">Primeiro Acesso</div>
+      <div id="tabLoginAdmin" class="tab ativa" onclick="mudarTipoLogin('admin')">Administrador</div>
+      <div id="tabLoginVendedor" class="tab" onclick="mudarTipoLogin('vendedor')">Sou Vendedor</div>
+      <div id="tabLoginAtivacao" class="tab" onclick="mudarTipoLogin('ativacao')">Ativar App</div>
     </div>
 
-    <div id="form-login">
-      <label>Usuário:</label>
-      <input type="text" id="loginUsuario" placeholder="Seu usuário">
+    <!-- Login Admin -->
+    <div id="form-login-admin">
+      <label>Usuário Administrador:</label>
+      <input type="text" id="loginAdminUser" placeholder="Seu usuário adm">
       <label>Senha:</label>
-      <input type="password" id="senhaUsuario" placeholder="Sua senha">
-      <button class="btn-blue" onclick="entrarComSenha()"><i class="fa-solid fa-right-to-bracket"></i> Acessar Sistema</button>
+      <input type="password" id="loginAdminSenha" placeholder="Sua senha">
+      <button class="btn-blue" onclick="entrarAdmin()"><i class="fa-solid fa-user-shield"></i> Entrar como Admin</button>
     </div>
 
-    <div id="form-cadastro" class="escondido">
-      <label>Código de Ativação:</label>
+    <!-- Login Vendedor por Código de 5 Dígitos -->
+    <div id="form-login-vendedor" class="escondido">
+      <label>Código de Acesso (5 Dígitos):</label>
+      <input type="text" id="loginCodigoVendedor" maxlength="5" placeholder="Ex: 84920" style="text-align: center; font-size: 20px; letter-spacing: 4px;">
+      <button class="btn-green" onclick="entrarVendedor()"><i class="fa-solid fa-user-tie"></i> Entrar no Caixa</button>
+    </div>
+
+    <!-- Ativação de Conta Admin -->
+    <div id="form-login-ativacao" class="escondido">
+      <label>Código de Ativação do Sistema:</label>
       <input type="text" id="cadCodigo" placeholder="EX: CAD-XXXX" style="text-transform: uppercase;">
-      <label>Criar Usuário:</label>
+      <label>Criar Usuário Admin:</label>
       <input type="text" id="cadLogin" placeholder="Nome de usuário">
       <label>Criar Senha:</label>
       <input type="password" id="cadSenha" placeholder="Senha secreta">
@@ -134,608 +144,187 @@
     <div id="msgErro" class="msg-erro escondido"></div>
   </div>
 
-  <!-- ================= TELA PRINCIPAL DO APP ================= -->
-  <div id="tela-app" class="card card-large escondido">
-    
+
+  <!-- ================= PAINEL DO ADMINISTRADOR ================= -->
+  <div id="painel-admin" class="card card-large escondido">
     <div class="header-app">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="background: #EFF6FF; color: var(--accent); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-          <i class="fa-solid fa-cash-register"></i>
+          <i class="fa-solid fa-user-shield"></i>
         </div>
         <div>
-          <h2 style="margin: 0; font-size: 18px;" id="tituloEmpresa">Painel Comercial</h2>
-          <span id="infoUsuario" style="font-size: 12px; color: var(--text-muted);"></span>
+          <h2 style="margin: 0; font-size: 18px;">Painel do Administrador</h2>
+          <span id="infoAdmin" style="font-size: 12px; color: var(--text-muted);"></span>
         </div>
       </div>
       <button class="btn-red btn-sm" onclick="deslogar()"><i class="fa-solid fa-power-off"></i> Sair</button>
     </div>
 
-    <!-- MENU DE NAVEGAÇÃO PRO -->
     <div class="tabs">
-      <div id="menuCaixa" class="tab ativa" onclick="mudarAbaApp('caixa')"><i class="fa-solid fa-wallet"></i> Caixa</div>
-      <div id="menuVendas" class="tab" onclick="mudarAbaApp('vendas')"><i class="fa-solid fa-cart-shopping"></i> Venda / PDV</div>
-      <div id="menuEstoque" class="tab" onclick="mudarAbaApp('estoque')"><i class="fa-solid fa-boxes-stacked"></i> Estoque</div>
-      <div id="menuClientes" class="tab" onclick="mudarAbaApp('clientes')"><i class="fa-solid fa-users-rectangle"></i> Clientes & Fiado</div>
-      <div id="menuVendedores" class="tab" onclick="mudarAbaApp('vendedores')"><i class="fa-solid fa-user-tie"></i> Vendedores</div>
-      <div id="menuRelatorios" class="tab" onclick="mudarAbaApp('relatorios')"><i class="fa-solid fa-chart-line"></i> Relatórios & Lucro</div>
+      <div id="menuCaixa" class="tab ativa" onclick="mudarAbaAdmin('caixa')"><i class="fa-solid fa-wallet"></i> Caixa</div>
+      <div id="menuVendas" class="tab" onclick="mudarAbaAdmin('vendas')"><i class="fa-solid fa-cart-shopping"></i> Venda / PDV</div>
+      <div id="menuEstoque" class="tab" onclick="mudarAbaAdmin('estoque')"><i class="fa-solid fa-boxes-stacked"></i> Estoque</div>
+      <div id="menuClientes" class="tab" onclick="mudarAbaAdmin('clientes')"><i class="fa-solid fa-users-rectangle"></i> Clientes & Fiado</div>
+      <div id="menuVendedores" class="tab" onclick="mudarAbaAdmin('vendedores')"><i class="fa-solid fa-user-tie"></i> Vendedores & Códigos</div>
+      <div id="menuRelatorios" class="tab" onclick="mudarAbaAdmin('relatorios')"><i class="fa-solid fa-chart-line"></i> Relatórios & Lucro</div>
     </div>
 
-    <!-- ================= ABA 1: CAIXA ================= -->
-    <div id="aba-caixa">
+    <!-- Conteúdo das Abas do Admin -->
+    <div id="adm-aba-caixa">
       <div class="resumo-cards">
-        <div class="box">
-          <h4>Status do Caixa</h4>
-          <p id="statusCaixaBadge" style="color: var(--danger);">Fechado</p>
-        </div>
-        <div class="box">
-          <h4>Saldo em Dinheiro</h4>
-          <p id="caixaSaldoDinheiro" style="color: var(--success);">R$ 0,00</p>
-        </div>
-        <div class="box">
-          <h4>Total em Caixa</h4>
-          <p id="caixaTotalGeral">R$ 0,00</p>
-        </div>
+        <div class="box"><h4>Status do Caixa</h4><p id="statusCaixaBadge" style="color: var(--danger);">Fechado</p></div>
+        <div class="box"><h4>Saldo Dinheiro</h4><p id="caixaSaldoDinheiro" style="color: var(--success);">R$ 0,00</p></div>
+        <div class="box"><h4>Total em Caixa</h4><p id="caixaTotalGeral">R$ 0,00</p></div>
       </div>
-
       <div class="secao" id="painelAberturaCaixa">
-        <h3><i class="fa-solid fa-lock-open" style="color: var(--success);"></i> Abertura de Caixa</h3>
-        <label>Valor Inicial (Troco em Dinheiro):</label>
-        <input type="number" id="caixaValorInicial" step="0.01" placeholder="Ex: 100.00">
-        <button class="btn-green" onclick="abrirCaixa()"><i class="fa-solid fa-play"></i> Abrir Caixa do Dia</button>
+        <h3>Abertura de Caixa</h3>
+        <label>Valor Inicial (Troco):</label>
+        <input type="number" id="caixaValorInicial" step="0.01" placeholder="100.00">
+        <button class="btn-green" onclick="abrirCaixa()">Abrir Caixa</button>
       </div>
-
       <div class="secao escondido" id="painelOperacoesCaixa">
-        <h3><i class="fa-solid fa-money-bill-transfer" style="color: var(--accent);"></i> Movimentação (Sangria / Suprimento)</h3>
+        <h3>Movimentação</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-          <div>
-            <label>Tipo:</label>
-            <select id="movTipo">
-              <option value="suprimento">Suprimento (Adicionar Dinheiro)</option>
-              <option value="sangria">Sangria (Retirar Dinheiro)</option>
-            </select>
-          </div>
-          <div>
-            <label>Valor (R$):</label>
-            <input type="number" id="movValor" step="0.01" placeholder="0.00">
-          </div>
-          <div>
-            <label>Motivo:</label>
-            <input type="text" id="movMotivo" placeholder="Ex: Pagamento fornecedor">
-          </div>
+          <div><label>Tipo:</label><select id="movTipo"><option value="suprimento">Suprimento</option><option value="sangria">Sangria</option></select></div>
+          <div><label>Valor:</label><input type="number" id="movValor" step="0.01"></div>
+          <div><label>Motivo:</label><input type="text" id="movMotivo"></div>
         </div>
-        <button class="btn-blue" onclick="registrarMovimentoCaixa()" style="margin-top: 10px;">Registrar Movimentação</button>
-        <button class="btn-red" onclick="fecharCaixa()" style="margin-top: 15px;"><i class="fa-solid fa-lock"></i> Fechar Caixa do Dia</button>
+        <button class="btn-blue" onclick="registrarMovimentoCaixa()" style="margin-top: 10px;">Registrar</button>
+        <button class="btn-red" onclick="fecharCaixa()" style="margin-top: 15px;">Fechar Caixa do Dia</button>
       </div>
     </div>
 
-    <!-- ================= ABA 2: VENDAS / PDV ================= -->
-    <div id="aba-vendas" class="escondido">
+    <div id="adm-aba-vendas" class="escondido">
       <div class="secao">
-        <h3><i class="fa-solid fa-cash-register" style="color: var(--accent);"></i> Frente de Caixa (PDV)</h3>
+        <h3>Frente de Caixa (PDV)</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-          <div>
-            <label>Vendedor:</label>
-            <select id="pdvVendedor"></select>
-          </div>
-          <div>
-            <label>Cliente:</label>
-            <select id="pdvCliente"></select>
-          </div>
-          <div>
-            <label>Produto:</label>
-            <select id="pdvProduto" onchange="atualizarPrecoPDV()"></select>
-          </div>
-          <div>
-            <label>Quantidade:</label>
-            <input type="number" id="pdvQtd" value="1" min="1">
-          </div>
-          <div>
-            <label>Preço Unitário (R$):</label>
-            <input type="number" id="pdvPrecoUn" step="0.01" readonly style="background: #E2E8F0;">
-          </div>
-          <div>
-            <label>Forma de Pagamento:</label>
-            <select id="pdvFormaPagamento">
-              <option value="Dinheiro">Dinheiro</option>
-              <option value="Pix">Pix</option>
-              <option value="Cartão Débito">Cartão Débito</option>
-              <option value="Cartão Crédito">Cartão Crédito</option>
-              <option value="Fiado">Fiado (Conta Corrente)</option>
-            </select>
-          </div>
+          <div><label>Vendedor:</label><select id="pdvVendedor"></select></div>
+          <div><label>Cliente:</label><select id="pdvCliente"></select></div>
+          <div><label>Produto:</label><select id="pdvProduto" onchange="atualizarPrecoPDV()"></select></div>
+          <div><label>Quantidade:</label><input type="number" id="pdvQtd" value="1" min="1"></div>
+          <div><label>Preço Un.:</label><input type="number" id="pdvPrecoUn" step="0.01" readonly style="background: #E2E8F0;"></div>
+          <div><label>Pagamento:</label><select id="pdvFormaPagamento"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão Débito">Cartão Débito</option><option value="Cartão Crédito">Cartão Crédito</option><option value="Fiado">Fiado</option></select></div>
         </div>
-        <button class="btn-green" onclick="finalizarVendaPDV()" style="margin-top: 15px;"><i class="fa-solid fa-check-double"></i> Finalizar e Imprimir Venda</button>
+        <button class="btn-green" onclick="finalizarVendaPDV('Admin')" style="margin-top: 15px;">Finalizar Venda</button>
       </div>
     </div>
 
-    <!-- ================= ABA 3: ESTOQUE ================= -->
-    <div id="aba-estoque" class="escondido">
+    <div id="adm-aba-estoque" class="escondido">
       <div class="resumo-cards">
         <div class="box"><h4>Produtos</h4><p id="totalProdutos">0</p></div>
-        <div class="box"><h4>Itens em Estoque</h4><p id="totalItens">0 UN</p></div>
-        <div class="box"><h4>Valor Investido</h4><p id="valorTotalEstoque" style="color: var(--success);">R$ 0,00</p></div>
+        <div class="box"><h4>Itens</h4><p id="totalItens">0 UN</p></div>
+        <div class="box"><h4>Valor</h4><p id="valorTotalEstoque" style="color: var(--success);">R$ 0,00</p></div>
       </div>
-
       <div class="secao">
-        <h3><i class="fa-solid fa-circle-plus" style="color: var(--success);"></i> Cadastro de Produto com Leitor</h3>
-        <button class="btn-blue" onclick="iniciarLeitorCodigoBarra()" style="margin-bottom: 15px; max-width: 300px;"><i class="fa-solid fa-camera"></i> Escanear Código de Barras</button>
+        <h3>Cadastrar Produto</h3>
+        <button class="btn-blue" onclick="iniciarLeitorCodigoBarra()" style="margin-bottom: 15px; max-width: 300px;"><i class="fa-solid fa-camera"></i> Escanear Código</button>
         <div id="reader" class="escondido"></div>
         <button id="btnPararCamera" class="btn-red btn-sm escondido" onclick="pararLeitorCodigoBarra()" style="margin: 10px auto; display: block;">Fechar Câmera</button>
-
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-          <div><label>Nome / Código:</label><input type="text" id="pNome" placeholder="Ex: Produto X"></div>
-          <div><label>Quantidade:</label><input type="number" id="pQtd" placeholder="Ex: 20"></div>
-          <div><label>Custo Unitário (R$):</label><input type="number" id="pCusto" step="0.01" placeholder="0.00"></div>
-          <div><label>Preço Venda (R$):</label><input type="number" id="pVenda" step="0.01" placeholder="0.00"></div>
+          <div><label>Nome / Código:</label><input type="text" id="pNome"></div>
+          <div><label>Qtd:</label><input type="number" id="pQtd"></div>
+          <div><label>Custo:</label><input type="number" id="pCusto" step="0.01"></div>
+          <div><label>Venda:</label><input type="number" id="pVenda" step="0.01"></div>
         </div>
-        <button class="btn-green" onclick="salvarProduto()" style="margin-top: 10px;"><i class="fa-solid fa-floppy-disk"></i> Salvar Produto</button>
+        <button class="btn-green" onclick="salvarProduto()" style="margin-top: 10px;">Salvar</button>
       </div>
-
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr><th>Produto</th><th>Estoque</th><th>Custo Un.</th><th>Venda Un.</th><th>Total</th><th>Ação</th></tr>
-          </thead>
-          <tbody id="tabelaEstoque"></tbody>
-        </table>
-      </div>
+      <div class="table-responsive"><table><thead><tr><th>Produto</th><th>Estoque</th><th>Custo</th><th>Venda</th><th>Total</th><th>Ação</th></tr></thead><tbody id="tabelaEstoque"></tbody></table></div>
     </div>
 
-    <!-- ================= ABA 4: CLIENTES & FIADO ================= -->
-    <div id="aba-clientes" class="escondido">
+    <div id="adm-aba-clientes" class="escondido">
       <div class="secao">
-        <h3><i class="fa-solid fa-user-plus" style="color: var(--success);"></i> Cadastrar Cliente</h3>
+        <h3>Cadastrar Cliente</h3>
         <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
-          <div><label>Nome:</label><input type="text" id="cNome" placeholder="Nome do cliente"></div>
-          <div><label>Telefone / WhatsApp:</label><input type="text" id="cTel" placeholder="(00) 00000-0000"></div>
-          <div><label>Limite Fiado (R$):</label><input type="number" id="cLimite" step="0.01" placeholder="500.00"></div>
+          <div><label>Nome:</label><input type="text" id="cNome"></div>
+          <div><label>Telefone:</label><input type="text" id="cTel"></div>
+          <div><label>Limite Fiado:</label><input type="number" id="cLimite" step="0.01"></div>
         </div>
-        <button class="btn-green" onclick="salvarCliente()" style="margin-top: 10px;">Salvar Cliente</button>
+        <button class="btn-green" onclick="salvarCliente()" style="margin-top: 10px;">Salvar</button>
       </div>
-
-      <h3><i class="fa-solid fa-address-book"></i> Carteira de Clientes & Débitos (Fiado)</h3>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr><th>Cliente</th><th>Telefone</th><th>Limite Fiado</th><th>Débito Atual</th><th>Ação / Quitar</th></tr>
-          </thead>
-          <tbody id="tabelaClientes"></tbody>
-        </table>
-      </div>
+      <div class="table-responsive"><table><thead><tr><th>Cliente</th><th>Telefone</th><th>Limite</th><th>Débito</th><th>Ação</th></tr></thead><tbody id="tabelaClientes"></tbody></table></div>
     </div>
 
-    <!-- ================= ABA 5: VENDEDORES ================= -->
-    <div id="aba-vendedores" class="escondido">
+    <div id="adm-aba-vendedores" class="escondido">
       <div class="secao">
-        <h3><i class="fa-solid fa-user-tie" style="color: var(--success);"></i> Cadastrar Vendedor</h3>
+        <h3>Cadastrar Vendedor & Gerar Código (5 Dígitos)</h3>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
-          <div><label>Nome:</label><input type="text" id="vNome" placeholder="Nome do vendedor"></div>
-          <div><label>Comissão (%):</label><input type="number" id="vComissao" step="0.1" placeholder="Ex: 5"></div>
+          <div><label>Nome do Vendedor:</label><input type="text" id="vNome"></div>
+          <div><label>Comissão (%):</label><input type="number" id="vComissao" step="0.1"></div>
         </div>
-        <button class="btn-green" onclick="salvarVendedor()" style="margin-top: 10px;">Salvar Vendedor</button>
+        <button class="btn-green" onclick="salvarVendedor()" style="margin-top: 10px;">Gerar Vendedor e Código</button>
       </div>
-
-      <div class="table-responsive">
-        <table>
-          <thead><tr><th>Nome</th><th>Comissão Padrão</th><th>Ação</th></tr></thead>
-          <tbody id="tabelaVendedores"></tbody>
-        </table>
-      </div>
+      <div class="table-responsive"><table><thead><tr><th>Nome</th><th>Código de Acesso</th><th>Comissão</th><th>Ação</th></tr></thead><tbody id="tabelaVendedores"></tbody></table></div>
     </div>
 
-    <!-- ================= ABA 6: RELATÓRIOS & LUCRO ================= -->
-    <div id="aba-relatorios" class="escondido">
+    <div id="adm-aba-relatorios" class="escondido">
       <div class="resumo-cards">
-        <div class="box"><h4>Faturamento Bruto</h4><p id="relFaturamento" style="color: var(--accent);">R$ 0,00</p></div>
-        <div class="box"><h4>Total Comissões</h4><p id="relComissoes" style="color: var(--warning);">R$ 0,00</p></div>
-        <div class="box"><h4>Lucro Líquido Real</h4><p id="relLucroLiquido" style="color: var(--success);">R$ 0,00</p></div>
+        <div class="box"><h4>Faturamento</h4><p id="relFaturamento" style="color: var(--accent);">R$ 0,00</p></div>
+        <div class="box"><h4>Comissões</h4><p id="relComissoes" style="color: var(--warning);">R$ 0,00</p></div>
+        <div class="box"><h4>Lucro Líquido</h4><p id="relLucroLiquido" style="color: var(--success);">R$ 0,00</p></div>
       </div>
+      <div class="table-responsive"><table><thead><tr><th>Data/Hora</th><th>Vendedor</th><th>Cliente</th><th>Produto</th><th>Pagto</th><th>Total</th><th>Lucro</th><th>Ação</th></tr></thead><tbody id="tabelaHistoricoVendas"></tbody></table></div>
+    </div>
+  </div>
 
-      <h3><i class="fa-solid fa-list-check"></i> Histórico Completo de Vendas</h3>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr><th>Data/Hora</th><th>Vendedor</th><th>Cliente</th><th>Produto</th><th>Pagamento</th><th>Total</th><th>Lucro</th><th>Ação</th></tr>
-          </thead>
-          <tbody id="tabelaHistoricoVendas"></tbody>
-        </table>
+
+  <!-- ================= PAINEL SIMPLIFICADO DO VENDEDOR ================= -->
+  <div id="painel-vendedor" class="card card-large escondido">
+    <div class="header-app">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="background: #EFF6FF; color: var(--success); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+          <i class="fa-solid fa-cash-register"></i>
+        </div>
+        <div>
+          <h2 style="margin: 0; font-size: 18px;" id="tituloVendedorLogado">Caixa do Vendedor</h2>
+          <span style="font-size: 12px; color: var(--success);">Modo Vendedor Ativo</span>
+        </div>
       </div>
+      <button class="btn-red btn-sm" onclick="deslogar()"><i class="fa-solid fa-power-off"></i> Sair</button>
     </div>
 
+    <div class="secao">
+      <h3><i class="fa-solid fa-cart-arrow-down" style="color: var(--accent);"></i> Registrar Nova Venda</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div><label>Cliente:</label><select id="vendPdvCliente"></select></div>
+        <div><label>Produto:</label><select id="vendPdvProduto" onchange="atualizarPrecoVendPDV()"></select></div>
+        <div><label>Quantidade:</label><input type="number" id="vendPdvQtd" value="1" min="1"></div>
+        <div><label>Preço Un.:</label><input type="number" id="vendPdvPrecoUn" step="0.01" readonly style="background: #E2E8F0;"></div>
+        <div><label>Pagamento:</label><select id="vendPdvFormaPagamento"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão Débito">Cartão Débito</option><option value="Cartão Crédito">Cartão Crédito</option><option value="Fiado">Fiado</option></select></div>
+      </div>
+      <button class="btn-green" onclick="finalizarVendaPDV('Vendedor')" style="margin-top: 15px;"><i class="fa-solid fa-check"></i> Concluir Venda e Enviar</button>
+    </div>
+
+    <h3><i class="fa-solid fa-clock-rotate-left"></i> Minhas Vendas Realizadas Hoje</h3>
+    <div class="table-responsive">
+      <table>
+        <thead><tr><th>Data/Hora</th><th>Cliente</th><th>Produto</th><th>Qtd</th><th>Pagto</th><th>Total Venda</th><th>Comissão a Receber</th></tr></thead>
+        <tbody id="tabelaMinhasVendas"></tbody>
+      </table>
+    </div>
   </div>
+
 
   <script>
     const FIREBASE_URL = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
-    let usuarioLogadoKey = null;
+    let vendedorAtualObj = null;
     let produtosGlobal = {}, vendedoresGlobal = {}, clientesGlobal = {};
     let html5QrCode = null;
 
-    function mudarAbaLogin(aba) {
+    function mudarTipoLogin(tipo) {
       document.getElementById("msgErro").classList.add("escondido");
-      if(aba === 'login') {
-        document.getElementById("form-login").classList.remove("escondido");
-        document.getElementById("form-cadastro").classList.add("escondido");
-        document.getElementById("tab1").classList.add("ativa");
-        document.getElementById("tab2").classList.remove("ativa");
-      } else {
-        document.getElementById("form-login").classList.add("escondido");
-        document.getElementById("form-cadastro").classList.remove("escondido");
-        document.getElementById("tab1").classList.remove("ativa");
-        document.getElementById("tab2").classList.add("ativa");
-      }
+      ['admin', 'vendedor', 'ativacao'].forEach(t => {
+        document.getElementById(`form-login-${t}`).classList.add("escondido");
+        document.getElementById(`tabLogin${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove("ativa");
+      });
+      document.getElementById(`form-login-${tipo}`).classList.remove("escondido");
+      document.getElementById(`tabLogin${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`).classList.add("ativa");
     }
 
-    function mudarAbaApp(aba) {
+    function mudarAbaAdmin(aba) {
       pararLeitorCodigoBarra();
       ['caixa', 'vendas', 'estoque', 'clientes', 'vendedores', 'relatorios'].forEach(a => {
-        document.getElementById(`aba-${a}`).classList.add("escondido");
+        document.getElementById(`adm-aba-${a}`).classList.add("escondido");
         document.getElementById(`menu${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
       });
-      document.getElementById(`aba-${aba}`).classList.remove("escondido");
-      document.getElementById(`menu${aba.charAt(0).toUpperCase() + aba.slice(1)}`).classList.add("ativa");
-
-      if(aba === 'caixa') carregarCaixa();
-      if(aba === 'vendas') prepararPDV();
-      if(aba === 'estoque') carregarEstoque();
-      if(aba === 'clientes') carregarClientes();
-      if(aba === 'vendedores') carregarVendedores();
-      if(aba === 'relatorios') carregarRelatorios();
-    }
-
-    async function cadastrarEAtivar() {
-      const codigo = document.getElementById("cadCodigo").value.trim().toUpperCase();
-      const login = document.getElementById("cadLogin").value.trim();
-      const senha = document.getElementById("cadSenha").value.trim();
-      const msgErro = document.getElementById("msgErro");
-
-      if(!codigo || !login || !senha) { msgErro.innerText = "Preencha todos os campos!"; msgErro.classList.remove("escondido"); return; }
-
-      const resCod = await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`);
-      const dadosCod = await resCod.json();
-      if(!dadosCod || dadosCod.usado) { msgErro.innerText = "Código inválido ou já usado!"; msgErro.classList.remove("escondido"); return; }
-
-      const userKey = login.replace(/[^a-zA-Z0-9]/g, "_");
-      const expiraEm = new Date(); expiraEm.setDate(expiraEm.getDate() + (dadosCod.dias || 30));
-
-      await fetch(`${FIREBASE_URL}/usuarios/${userKey}.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login, senha, status: "ativo", expiraEm: expiraEm.toISOString() })
-      });
-      await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usado: true, usadoPor: login })
-      });
-
-      alert("Conta ativada com sucesso! Faça login.");
-      mudarAbaLogin('login');
-    }
-
-    async function entrarComSenha() {
-      const login = document.getElementById("loginUsuario").value.trim();
-      const senha = document.getElementById("senhaUsuario").value.trim();
-      const msgErro = document.getElementById("msgErro");
-
-      const userKey = login.replace(/[^a-zA-Z0-9]/g, "_");
-      const res = await fetch(`${FIREBASE_URL}/usuarios/${userKey}.json`);
-      const u = await res.json();
-
-      if(!u || u.senha !== senha || u.status === "bloqueado") {
-        msgErro.innerText = "Usuário, senha incorretos ou bloqueados!";
-        msgErro.classList.remove("escondido");
-        return;
-      }
-
-      usuarioLogadoKey = userKey;
-      document.getElementById("infoUsuario").innerText = `Operador: ${u.login}`;
-      document.getElementById("tela-login").classList.add("escondido");
-      document.getElementById("tela-app").classList.remove("escondido");
-      mudarAbaApp('caixa');
-    }
-
-    function deslogar() {
-      usuarioLogadoKey = null;
-      document.getElementById("tela-app").classList.add("escondido");
-      document.getElementById("tela-login").classList.remove("escondido");
-    }
-
-    // --- MÓDULO CAIXA ---
-    async function abrirCaixa() {
-      const valorInicial = Number(document.getElementById("caixaValorInicial").value);
-      if(isNaN(valorInicial)) { alert("Informe o valor inicial do caixa!"); return; }
-
-      const hoje = new Date().toISOString().split('T')[0];
-      await fetch(`${FIREBASE_URL}/caixa/${hoje}.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "aberto", abertura: valorInicial, movimentos: [] })
-      });
-      carregarCaixa();
-    }
-
-    async function carregarCaixa() {
-      const hoje = new Date().toISOString().split('T')[0];
-      const res = await fetch(`${FIREBASE_URL}/caixa/${hoje}.json`);
-      const dados = await res.json();
-
-      if(dados && dados.status === "aberto") {
-        document.getElementById("statusCaixaBadge").innerText = "ABERTO";
-        document.getElementById("statusCaixaBadge").style.color = "var(--success)";
-        document.getElementById("painelAberturaCaixa").classList.add("escondido");
-        document.getElementById("painelOperacoesCaixa").classList.remove("escondido");
-
-        let saldoDinheiro = dados.abertura;
-        if(dados.movimentos) {
-          Object.values(dados.movimentos).forEach(m => {
-            if(m.tipo === 'suprimento') saldoDinheiro += m.valor;
-            if(m.tipo === 'sangria') saldoDinheiro -= m.valor;
-          });
-        }
-        document.getElementById("caixaSaldoDinheiro").innerText = "R$ " + saldoDinheiro.toFixed(2);
-        document.getElementById("caixaTotalGeral").innerText = "R$ " + saldoDinheiro.toFixed(2);
-      } else {
-        document.getElementById("statusCaixaBadge").innerText = "FECHADO";
-        document.getElementById("statusCaixaBadge").style.color = "var(--danger)";
-        document.getElementById("painelAberturaCaixa").classList.remove("escondido");
-        document.getElementById("painelOperacoesCaixa").classList.add("escondido");
-      }
-    }
-
-    async function registrarMovimentoCaixa() {
-      const tipo = document.getElementById("movTipo").value;
-      const valor = Number(document.getElementById("movValor").value);
-      const motivo = document.getElementById("movMotivo").value.trim();
-
-      if(!valor || !motivo) { alert("Preencha valor e motivo!"); return; }
-
-      const hoje = new Date().toISOString().split('T')[0];
-      await fetch(`${FIREBASE_URL}/caixa/${hoje}/movimentos.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo, valor, motivo, hora: new Date().toLocaleTimeString() })
-      });
-      document.getElementById("movValor").value = "";
-      document.getElementById("movMotivo").value = "";
-      carregarCaixa();
-    }
-
-    async function fecharCaixa() {
-      if(!confirm("Deseja realmente fechar o caixa do dia?")) return;
-      const hoje = new Date().toISOString().split('T')[0];
-      await fetch(`${FIREBASE_URL}/caixa/${hoje}.json`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "fechado" })
-      });
-      carregarCaixa();
-    }
-
-    // --- MÓDULO PDV / VENDAS ---
-    async function prepararPDV() {
-      const resV = await fetch(`${FIREBASE_URL}/vendedores.json`);
-      vendedoresGlobal = (await resV.json()) || {};
-      const selV = document.getElementById("pdvVendedor"); selV.innerHTML = "";
-      Object.keys(vendedoresGlobal).forEach(k => selV.innerHTML += `<option value="${k}">${vendedoresGlobal[k].nome}</option>`);
-
-      const resC = await fetch(`${FIREBASE_URL}/clientes.json`);
-      clientesGlobal = (await resC.json()) || {};
-      const selC = document.getElementById("pdvCliente"); selC.innerHTML = `<option value="">Consumidor Geral</option>`;
-      Object.keys(clientesGlobal).forEach(k => selC.innerHTML += `<option value="${k}">${clientesGlobal[k].nome}</option>`);
-
-      const resP = await fetch(`${FIREBASE_URL}/estoque.json`);
-      produtosGlobal = (await resP.json()) || {};
-      const selP = document.getElementById("pdvProduto"); selP.innerHTML = "";
-      Object.keys(produtosGlobal).forEach(k => selP.innerHTML += `<option value="${k}">${produtosGlobal[k].nome} (Est: ${produtosGlobal[k].qtd})</option>`);
-
-      atualizarPrecoPDV();
-    }
-
-    function atualizarPrecoPDV() {
-      const pKey = document.getElementById("pdvProduto").value;
-      if(pKey && produtosGlobal[pKey]) {
-        document.getElementById("pdvPrecoUn").value = produtosGlobal[pKey].venda;
-      }
-    }
-
-    async function finalizarVendaPDV() {
-      const vKey = document.getElementById("pdvVendedor").value;
-      const cKey = document.getElementById("pdvCliente").value;
-      const pKey = document.getElementById("pdvProduto").value;
-      const qtd = Number(document.getElementById("pdvQtd").value);
-      const formaPagto = document.getElementById("pdvFormaPagamento").value;
-
-      if(!vKey || !pKey || qtd <= 0) { alert("Selecione vendedor, produto e quantidade válida!"); return; }
-
-      const prod = produtosGlobal[pKey];
-      if(qtd > prod.qtd) { alert("Estoque insuficiente!"); return; }
-
-      const vend = vendedoresGlobal[vKey];
-      const totalVenda = qtd * prod.venda;
-      const custoTotal = qtd * prod.custo;
-      const comissao = totalVenda * (vend.comissao / 100);
-      const lucroLiquido = totalVenda - custoTotal - comissao;
-
-      // Se for fiado, atualizar débito do cliente
-      if(formaPagto === 'Fiado') {
-        if(!cKey) { alert("Para vender no Fiado, selecione um cliente cadastrado!"); return; }
-        const cli = clientesGlobal[cKey];
-        const novoDebito = (cli.debito || 0) + totalVenda;
-        if(novoDebito > (cli.limite || 0)) { alert("Atenção: Limite de fiado excedido para este cliente!"); }
-        await fetch(`${FIREBASE_URL}/clientes/${cKey}.json`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ debito: novoDebito })
-        });
-      }
-
-      // Baixa no estoque
-      await fetch(`${FIREBASE_URL}/estoque/${pKey}.json`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ qtd: prod.qtd - qtd })
-      });
-
-      // Salvar venda
-      await fetch(`${FIREBASE_URL}/vendas.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dataHora: new Date().toLocaleString("pt-BR"),
-          vendedorNome: vend.nome,
-          clienteNome: cKey ? clientesGlobal[cKey].nome : "Consumidor Geral",
-          produtoNome: prod.nome,
-          qtd, totalVenda, comissao, lucroLiquido, formaPagto
-        })
-      });
-
-      alert("Venda realizada com sucesso!");
-      prepararPDV();
-    }
-
-    // --- ESTOQUE COM LEITOR ---
-    function iniciarLeitorCodigoBarra() {
-      document.getElementById("reader").classList.remove("escondido");
-      document.getElementById("btnPararCamera").classList.remove("escondido");
-      if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, text => {
-        document.getElementById("pNome").value = text;
-        pararLeitorCodigoBarra();
-      });
-    }
-
-    function pararLeitorCodigoBarra() {
-      if(html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-          document.getElementById("reader").classList.add("escondido");
-          document.getElementById("btnPararCamera").classList.add("escondido");
-        });
-      }
-    }
-
-    async function salvarProduto() {
-      const nome = document.getElementById("pNome").value.trim();
-      const qtd = Number(document.getElementById("pQtd").value);
-      const custo = Number(document.getElementById("pCusto").value);
-      const venda = Number(document.getElementById("pVenda").value);
-      if(!nome || isNaN(qtd)) { alert("Preencha os dados do produto!"); return; }
-
-      await fetch(`${FIREBASE_URL}/estoque.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, qtd, custo, venda })
-      });
-      document.getElementById("pNome").value = "";
-      document.getElementById("pQtd").value = "";
-      document.getElementById("pCusto").value = "";
-      document.getElementById("pVenda").value = "";
-      carregarEstoque();
-    }
-
-    async function carregarEstoque() {
-      const res = await fetch(`${FIREBASE_URL}/estoque.json`);
-      produtosGlobal = (await res.json()) || {};
-      const tabela = document.getElementById("tabelaEstoque"); tabela.innerHTML = "";
-      let totalP = 0, totalI = 0, valorE = 0;
-
-      Object.keys(produtosGlobal).forEach(k => {
-        let p = produtosGlobal[k];
-        totalP++; totalI += p.qtd; valorE += (p.qtd * p.venda);
-        tabela.innerHTML += `<tr><td><strong>${p.nome}</strong></td><td>${p.qtd} UN</td><td>R$ ${p.custo.toFixed(2)}</td><td>R$ ${p.venda.toFixed(2)}</td><td>R$ ${(p.qtd*p.venda).toFixed(2)}</td><td><button class="btn-red btn-sm" onclick="deletarEstoque('${k}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
-      });
-      document.getElementById("totalProdutos").innerText = totalP;
-      document.getElementById("totalItens").innerText = totalI + " UN";
-      document.getElementById("valorTotalEstoque").innerText = "R$ " + valorE.toFixed(2);
-    }
-
-    async function deletarEstoque(k) {
-      if(confirm("Excluir produto?")) { await fetch(`${FIREBASE_URL}/estoque/${k}.json`, { method: "DELETE" }); carregarEstoque(); }
-    }
-
-    // --- CLIENTES & FIADO ---
-    async function salvarCliente() {
-      const nome = document.getElementById("cNome").value.trim();
-      const tel = document.getElementById("cTel").value.trim();
-      const limite = Number(document.getElementById("cLimite").value);
-      if(!nome) { alert("Informe o nome do cliente!"); return; }
-
-      await fetch(`${FIREBASE_URL}/clientes.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, tel, limite: isNaN(limite)?0:limite, debito: 0 })
-      });
-      document.getElementById("cNome").value = ""; document.getElementById("cTel").value = ""; document.getElementById("cLimite").value = "";
-      carregarClientes();
-    }
-
-    async function carregarClientes() {
-      const res = await fetch(`${FIREBASE_URL}/clientes.json`);
-      clientesGlobal = (await res.json()) || {};
-      const tabela = document.getElementById("tabelaClientes"); tabela.innerHTML = "";
-      Object.keys(clientesGlobal).forEach(k => {
-        let c = clientesGlobal[k];
-        tabela.innerHTML += `<tr><td><strong>${c.nome}</strong></td><td>${c.tel || '-'}</td><td>R$ ${(c.limite||0).toFixed(2)}</td><td style="color:var(--danger);">R$ ${(c.debito||0).toFixed(2)}</td><td><button class="btn-green btn-sm" onclick="quitarFiado('${k}')">Quitar Débito</button></td></tr>`;
-      });
-    }
-
-    async function quitarFiado(k) {
-      let valor = prompt("Quanto o cliente pagou para abater o fiado?");
-      if(!valor || isNaN(valor)) return;
-      let c = clientesGlobal[k];
-      let novoDebito = Math.max(0, (c.debito || 0) - Number(valor));
-      await fetch(`${FIREBASE_URL}/clientes/${k}.json`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ debito: novoDebito })
-      });
-      carregarClientes();
-    }
-
-    // --- VENDEDORES ---
-    async function salvarVendedor() {
-      const nome = document.getElementById("vNome").value.trim();
-      const comissao = Number(document.getElementById("vComissao").value);
-      if(!nome) return;
-      await fetch(`${FIREBASE_URL}/vendedores.json`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome, comissao }) });
-      document.getElementById("vNome").value = ""; document.getElementById("vComissao").value = "";
-      carregarVendedores();
-    }
-
-    async function carregarVendedores() {
-      const res = await fetch(`${FIREBASE_URL}/vendedores.json`);
-      vendedoresGlobal = (await res.json()) || {};
-      const tabela = document.getElementById("tabelaVendedores"); tabela.innerHTML = "";
-      Object.keys(vendedoresGlobal).forEach(k => {
-        let v = vendedoresGlobal[k];
-        tabela.innerHTML += `<tr><td><strong>${v.nome}</strong></td><td>${v.comissao}%</td><td><button class="btn-red btn-sm" onclick="deletarVendedor('${k}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
-      });
-    }
-
-    async function deletarVendedor(k) {
-      if(confirm("Excluir vendedor?")) { await fetch(`${FIREBASE_URL}/vendedores/${k}.json`, { method: "DELETE" }); carregarVendedores(); }
-    }
-
-    // --- RELATÓRIOS E LUCRO ---
-    async function carregarRelatorios() {
-      const res = await fetch(`${FIREBASE_URL}/vendas.json`);
-      const vendas = (await res.json()) || {};
-      const tabela = document.getElementById("tabelaHistoricoVendas"); tabela.innerHTML = "";
-      let fat = 0, com = 0, lucro = 0;
-
-      Object.keys(vendas).forEach(k => {
-        let v = vendas[k];
-        fat += v.totalVenda; com += v.comissao; lucro += (v.lucroLiquido || 0);
-        tabela.innerHTML += `<tr><td>${v.dataHora}</td><td>${v.vendedorNome}</td><td>${v.clienteNome}</td><td>${v.produtoNome} (${v.qtd})</td><td>${v.formaPagto}</td><td>R$ ${v.totalVenda.toFixed(2)}</td><td style="color:var(--success);">R$ ${(v.lucroLiquido||0).toFixed(2)}</td><td><button class="btn-red btn-sm" onclick="deletarVenda('${k}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
-      });
-
-      document.getElementById("relFaturamento").innerText = "R$ " + fat.toFixed(2);
-      document.getElementById("relComissoes").innerText = "R$ " + com.toFixed(2);
-      document.getElementById("relLucroLiquido").innerText = "R$ " + lucro.toFixed(2);
-    }
-
-    async function deletarVenda(k) {
-      if(confirm("Excluir registro?")) { await fetch(`${FIREBASE_URL}/vendas/${k}.json`, { method: "DELETE" }); carregarRelatorios(); }
-    }
-  </script>
-</body>
-</html>
+      document.getElementById(`adm-aba-${aba}`).classList.remove("escondido");
+      document.getElementById(`menu${aba.charAt(0).toUpperCase() + aba.slice(1)}`).classList.add("a
