@@ -67,7 +67,6 @@
     th, td { padding: 14px 16px; font-size: 13px; }
     th { background: var(--primary); color: white; font-weight: 600; }
     tr:not(:last-child) td { border-bottom: 1px solid var(--border-color); }
-    #reader { width: 100%; max-width: 350px; margin: 10px auto; border-radius: 8px; border: 2px solid var(--accent); overflow: hidden; }
   </style>
 </head>
 <body>
@@ -237,7 +236,7 @@
 
   <script>
     const URL_DB = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
-    let vendAtual = null, prodsG = {}, vendsG = {}, clisG = {};
+    let adminAtualKey = null, vendAtual = null, prodsG = {}, vendsG = {}, clisG = {};
 
     function mudarAbaLogin(tipo) {
       document.getElementById("msgErro").classList.add("escondido");
@@ -270,9 +269,23 @@
       const log = document.getElementById("cadLogin").value.trim();
       const sen = document.getElementById("cadSenha").value.trim();
       const err = document.getElementById("msgErro");
+      
       if(!cod || !log || !sen) { err.innerText = "Preencha tudo!"; err.classList.remove("escondido"); return; }
+      
+      // Valida se o código de ativação existe e não foi usado
+      const resCod = await fetch(`${URL_DB}/codigos_ativacao/${cod}.json`);
+      const valCod = await resCod.json();
+      
+      if (!valCod || valCod.usado === true) {
+        err.innerText = "Código de ativação inválido ou já utilizado!"; err.classList.remove("escondido"); return;
+      }
+
       const key = log.replace(/[^a-zA-Z0-9]/g, "_");
+      
+      // Salva usuário e marca o código como usado instantaneamente
       await fetch(`${URL_DB}/usuarios/${key}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({login: log, senha: sen}) });
+      await fetch(`${URL_DB}/codigos_ativacao/${cod}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({usado: true}) });
+
       alert("Conta ativada com sucesso! Faça login.");
       mudarAbaLogin('admin');
     }
@@ -285,6 +298,8 @@
       const res = await fetch(`${URL_DB}/usuarios/${key}.json`);
       const u = await res.json();
       if(!u || u.senha !== sen) { err.innerText = "Usuário ou senha inválidos!"; err.classList.remove("escondido"); return; }
+      
+      adminAtualKey = key;
       document.getElementById("infoAdmin").innerText = `Admin: ${u.login}`;
       document.getElementById("tela-login").classList.add("escondido");
       document.getElementById("painel-admin").classList.remove("escondido");
@@ -295,12 +310,26 @@
       const cod = document.getElementById("loginCodigoVendedor").value.trim();
       const err = document.getElementById("msgErro");
       if(cod.length !== 5) { err.innerText = "Digite o código de 5 dígitos!"; err.classList.remove("escondido"); return; }
+      
       const res = await fetch(`${URL_DB}/vendedores.json`);
-      vendsG = (await res.json()) || {};
+      const todosAdminsVendedores = (await res.json()) || {};
       let achou = null;
-      Object.keys(vendsG).forEach(k => { if(vendsG[k].codigo === cod) achou = {key: k, ...vendsG[k]}; });
+
+      // Procura em todos os administradores qual deles possui este código de vendedor
+      Object.keys(todosAdminsVendedores).forEach(admKey => {
+        const vendsDoAdmin = todosAdminsVendedores[admKey] || {};
+        Object.keys(vendsDoAdmin).forEach(vKey => {
+          if (vendsDoAdmin[vKey].codigo === cod) {
+            achou = { adminKey: admKey, key: vKey, ...vendsDoAdmin[vKey] };
+          }
+        });
+      });
+
       if(!achou) { err.innerText = "Código de vendedor não encontrado!"; err.classList.remove("escondido"); return; }
+      
       vendAtual = achou;
+      adminAtualKey = achou.adminKey; // Garante que o vendedor vai interagir apenas com o estoque/vendas do seu admin específico
+      
       document.getElementById("tituloVendLogado").innerText = `Caixa: ${vendAtual.nome}`;
       document.getElementById("tela-login").classList.add("escondido");
       document.getElementById("painel-vendedor").classList.remove("escondido");
@@ -309,6 +338,7 @@
 
     function deslogar() {
       vendAtual = null;
+      adminAtualKey = null;
       document.getElementById("painel-admin").classList.add("escondido");
       document.getElementById("painel-vendedor").classList.add("escondido");
       document.getElementById("tela-login").classList.remove("escondido");
@@ -317,13 +347,13 @@
     async function abrirCaixa() {
       const val = Number(document.getElementById("valInicial").value);
       const hoje = new Date().toISOString().split('T')[0];
-      await fetch(`${URL_DB}/caixa/${hoje}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({status: "aberto", abertura: val}) });
+      await fetch(`${URL_DB}/caixa/${adminAtualKey}/${hoje}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({status: "aberto", abertura: val}) });
       carregarCaixa();
     }
 
     async function carregarCaixa() {
       const hoje = new Date().toISOString().split('T')[0];
-      const res = await fetch(`${URL_DB}/caixa/${hoje}.json`);
+      const res = await fetch(`${URL_DB}/caixa/${adminAtualKey}/${hoje}.json`);
       const d = await res.json();
       if(d && d.status === "aberto") {
         document.getElementById("stCaixa").innerText = "ABERTO"; document.getElementById("stCaixa").style.color = "var(--success)";
@@ -338,12 +368,12 @@
     async function fecharCaixa() {
       if(!confirm("Fechar caixa?")) return;
       const hoje = new Date().toISOString().split('T')[0];
-      await fetch(`${URL_DB}/caixa/${hoje}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({status: "fechado"}) });
+      await fetch(`${URL_DB}/caixa/${adminAtualKey}/${hoje}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({status: "fechado"}) });
       carregarCaixa();
     }
 
     async function preencherPDVAdmin() {
-      const resV = await fetch(`${URL_DB}/vendedores.json`); vendsG = (await resV.json()) || {};
+      const resV = await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`); vendsG = (await resV.json()) || {};
       const selV = document.getElementById("pdvVend"); selV.innerHTML = "";
       Object.keys(vendsG).forEach(k => selV.innerHTML += `<option value="${k}">${vendsG[k].nome}</option>`);
       carregarDadosComunsPDV('pdv');
@@ -352,11 +382,11 @@
     async function preencherPDVVend() { carregarDadosComunsPDV('vPdv'); }
 
     async function carregarDadosComunsPDV(pref) {
-      const resC = await fetch(`${URL_DB}/clientes.json`); clisG = (await resC.json()) || {};
+      const resC = await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`); clisG = (await resC.json()) || {};
       const selC = document.getElementById(`${pref}Cli`); selC.innerHTML = `<option value="">Consumidor Geral</option>`;
       Object.keys(clisG).forEach(k => selC.innerHTML += `<option value="${k}">${clisG[k].nome}</option>`);
 
-      const resP = await fetch(`${URL_DB}/estoque.json`); prodsG = (await resP.json()) || {};
+      const resP = await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`); prodsG = (await resP.json()) || {};
       const selP = document.getElementById(`${pref}Prod`); selP.innerHTML = "";
       Object.keys(prodsG).forEach(k => selP.innerHTML += `<option value="${k}">${prodsG[k].nome} (Est: ${prodsG[k].qtd})</option>`);
       atualizaPreco(pref);
@@ -396,8 +426,8 @@
       const total = qtd * prod.venda;
       const comissao = total * (vCom / 100);
 
-      await fetch(`${URL_DB}/estoque/${pKey}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({qtd: prod.qtd - qtd}) });
-      await fetch(`${URL_DB}/vendas.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
+      await fetch(`${URL_DB}/estoque/${adminAtualKey}/${pKey}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({qtd: prod.qtd - qtd}) });
+      await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
         data: new Date().toLocaleString("pt-BR"), vendedor: vNome, cliente: cKey ? clisG[cKey].nome : "Geral", produto: prod.nome, total, comissao, pag
       }) });
 
@@ -411,32 +441,32 @@
       const custo = Number(document.getElementById("pCusto").value);
       const venda = Number(document.getElementById("pVenda").value);
       if(!nome) { alert("Preencha o nome!"); return; }
-      await fetch(`${URL_DB}/estoque.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, qtd, custo, venda}) });
+      await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, qtd, custo, venda}) });
       document.getElementById("pNome").value = ""; document.getElementById("pQtd").value = ""; document.getElementById("pCusto").value = ""; document.getElementById("pVenda").value = "";
       carregarEstoque();
     }
 
     async function carregarEstoque() {
-      const res = await fetch(`${URL_DB}/estoque.json`); prodsG = (await res.json()) || {};
+      const res = await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`); prodsG = (await res.json()) || {};
       const tab = document.getElementById("tabelaEstoque"); tab.innerHTML = "";
       Object.keys(prodsG).forEach(k => {
         let p = prodsG[k];
         tab.innerHTML += `<tr><td><strong>${p.nome}</strong></td><td>${p.qtd} UN</td><td>R$ ${p.venda.toFixed(2)}</td><td><button class="btn-red btn-sm" onclick="delEstoque('${k}')">Excluir</button></td></tr>`;
       });
     }
-    async function delEstoque(k) { await fetch(`${URL_DB}/estoque/${k}.json`, {method: "DELETE"}); carregarEstoque(); }
+    async function delEstoque(k) { await fetch(`${URL_DB}/estoque/${adminAtualKey}/${k}.json`, {method: "DELETE"}); carregarEstoque(); }
 
     async function salvarCliente() {
       const nome = document.getElementById("cNome").value.trim();
       const tel = document.getElementById("cTel").value.trim();
       if(!nome) { alert("Preencha o nome!"); return; }
-      await fetch(`${URL_DB}/clientes.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, tel, debito: 0}) });
+      await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, tel, debito: 0}) });
       document.getElementById("cNome").value = ""; document.getElementById("cTel").value = "";
       carregarClientes();
     }
 
     async function carregarClientes() {
-      const res = await fetch(`${URL_DB}/clientes.json`); clisG = (await res.json()) || {};
+      const res = await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`); clisG = (await res.json()) || {};
       const tab = document.getElementById("tabelaClientes"); tab.innerHTML = "";
       Object.keys(clisG).forEach(k => {
         let c = clisG[k];
@@ -449,24 +479,26 @@
       const comissao = Number(document.getElementById("vComissao").value);
       if(!nome || isNaN(comissao)) { alert("Preencha nome e comissão!"); return; }
       const codigo5 = Math.floor(10000 + Math.random() * 90000).toString();
-      await fetch(`${URL_DB}/vendedores.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, comissao, codigo: codigo5}) });
+      
+      // Salva dentro do nó específico do administrador atual para evitar mistura
+      await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, comissao, codigo: codigo5}) });
       document.getElementById("vNome").value = ""; document.getElementById("vComissao").value = "";
       alert(`Vendedor criado com sucesso!\nCódigo de acesso: ${codigo5}`);
       carregarVendedores();
     }
 
     async function carregarVendedores() {
-      const res = await fetch(`${URL_DB}/vendedores.json`); vendsG = (await res.json()) || {};
+      const res = await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`); vendsG = (await res.json()) || {};
       const tab = document.getElementById("tabelaVendedores"); tab.innerHTML = "";
       Object.keys(vendsG).forEach(k => {
         let v = vendsG[k];
         tab.innerHTML += `<tr><td><strong>${v.nome}</strong></td><td><span style="background:#EFF6FF; color:var(--accent); padding:4px 8px; border-radius:4px; font-weight:bold; font-size:15px;">${v.codigo||'-----'}</span></td><td>${v.comissao}%</td><td><button class="btn-red btn-sm" onclick="delVendedor('${k}')">Excluir</button></td></tr>`;
       });
     }
-    async function delVendedor(k) { await fetch(`${URL_DB}/vendedores/${k}.json`, {method: "DELETE"}); carregarVendedores(); }
+    async function delVendedor(k) { await fetch(`${URL_DB}/vendedores/${adminAtualKey}/${k}.json`, {method: "DELETE"}); carregarVendedores(); }
 
     async function carregarRelatorios() {
-      const res = await fetch(`${URL_DB}/vendas.json`); const vendas = (await res.json()) || {};
+      const res = await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`); const vendas = (await res.json()) || {};
       const tab = document.getElementById("tabelaVendas"); tab.innerHTML = "";
       let fat = 0, com = 0;
       Object.values(vendas).forEach(v => {
