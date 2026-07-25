@@ -8,7 +8,8 @@
   <meta name="theme-color" content="#0F172A">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <!-- Biblioteca para gerar QR Code visualmente -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     :root {
@@ -32,8 +33,8 @@
     .card { background: var(--card-bg); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); width: 100%; max-width: 420px; border: 1px solid var(--border-color); }
     .card-large { max-width: 1200px; padding: 25px; }
     
-    .tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid var(--border-color); gap: 5px; }
-    .tab { flex: 1; text-align: center; padding: 12px 8px; cursor: pointer; font-weight: 600; color: var(--text-muted); font-size: 13px; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid var(--border-color); gap: 5px; overflow-x: auto; }
+    .tab { flex: 1; text-align: center; padding: 12px 8px; cursor: pointer; font-weight: 600; color: var(--text-muted); font-size: 13px; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; }
     .tab:hover { color: var(--accent); }
     .tab.ativa { color: var(--accent); border-bottom: 2px solid var(--accent); }
 
@@ -47,6 +48,7 @@
     .btn-blue { background: var(--accent); color: white; }
     .btn-green { background: var(--success); color: white; }
     .btn-red { background: var(--danger); color: white; }
+    .btn-whatsapp { background: #25D366; color: white; }
     .btn-sm { padding: 8px 12px; font-size: 12px; width: auto; display: inline-flex; }
 
     .escondido { display: none !important; }
@@ -67,6 +69,10 @@
     th, td { padding: 14px 16px; font-size: 13px; }
     th { background: var(--primary); color: white; font-weight: 600; }
     tr:not(:last-child) td { border-bottom: 1px solid var(--border-color); }
+
+    /* Modal Pix / Comprovante */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+    .modal-card { background: white; padding: 25px; border-radius: var(--radius); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
   </style>
 </head>
 <body>
@@ -131,6 +137,7 @@
       <div id="mEstoque" class="tab" onclick="mudarAdminTab('estoque')">Estoque</div>
       <div id="mClientes" class="tab" onclick="mudarAdminTab('clientes')">Fiado</div>
       <div id="mVendedores" class="tab" onclick="mudarAdminTab('vendedores')">Vendedores</div>
+      <div id="mConfig" class="tab" onclick="mudarAdminTab('config')">Pix / Config</div>
       <div id="mRelatorios" class="tab" onclick="mudarAdminTab('relatorios')">Relatórios</div>
     </div>
 
@@ -152,7 +159,7 @@
 
     <div id="adm-vendas" class="escondido">
       <div class="secao">
-        <h3>Frente de Caixa</h3>
+        <h3>Frente de Caixa (Admin)</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
           <div><label>Vendedor:</label><select id="pdvVend"></select></div>
           <div><label>Cliente:</label><select id="pdvCli"></select></div>
@@ -161,7 +168,7 @@
           <div><label>Preço:</label><input type="number" id="pdvPreco" readonly style="background:#E2E8F0"></div>
           <div><label>Pagamento:</label><select id="pdvPag"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Fiado">Fiado</option></select></div>
         </div>
-        <button class="btn-green" onclick="vender('Admin')" style="margin-top:15px;">Finalizar Venda</button>
+        <button class="btn-green" onclick="iniciarVenda('Admin')" style="margin-top:15px;">Finalizar Venda</button>
       </div>
     </div>
 
@@ -184,7 +191,7 @@
         <h3>Cadastrar Cliente</h3>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
           <div><label>Nome:</label><input type="text" id="cNome"></div>
-          <div><label>Telefone:</label><input type="text" id="cTel"></div>
+          <div><label>Telefone (com DDD para WhatsApp):</label><input type="text" id="cTel" placeholder="Ex: 11999999999"></div>
         </div>
         <button class="btn-green" onclick="salvarCliente()">Salvar Cliente</button>
       </div>
@@ -201,6 +208,16 @@
         <button class="btn-green" onclick="salvarVendedor()">Gerar Vendedor</button>
       </div>
       <div class="table-responsive"><table><thead><tr><th>Nome</th><th>Código de 5 Dígitos</th><th>Comissão</th><th>Ação</th></tr></thead><tbody id="tabelaVendedores"></tbody></table></div>
+    </div>
+
+    <div id="adm-config" class="escondido">
+      <div class="secao">
+        <h3>Configuração de Chave Pix para Recebimento</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">Insira sua chave Pix cadastrada (CPF, CNPJ, E-mail, Telefone ou Chave Aleatória). Ela será usada para gerar o QR Code automático nas vendas Pix dos seus vendedores.</p>
+        <label>Sua Chave Pix:</label>
+        <input type="text" id="inputChavePix" placeholder="Ex: meuemail@gmail.com ou 11999999999">
+        <button class="btn-green" onclick="salvarChavePix()">Salvar Chave Pix</button>
+      </div>
     </div>
 
     <div id="adm-relatorios" class="escondido">
@@ -230,13 +247,46 @@
         <div><label>Preço:</label><input type="number" id="vPdvPreco" readonly style="background:#E2E8F0"></div>
         <div><label>Pagamento:</label><select id="vPdvPag"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Fiado">Fiado</option></select></div>
       </div>
-      <button class="btn-green" onclick="vender('Vendedor')" style="margin-top:15px;">Concluir Venda</button>
+      <button class="btn-green" onclick="iniciarVenda('Vendedor')" style="margin-top:15px;">Concluir Venda</button>
+    </div>
+  </div>
+
+  <!-- MODAL PIX -->
+  <div id="modalPix" class="modal-overlay escondido">
+    <div class="modal-card">
+      <h3 style="margin-top: 0; color: var(--primary);"><i class="fa-brands fa-pix" style="color: #00BA88;"></i> Pagamento via Pix</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Escaneie o QR Code abaixo com o aplicativo do banco para pagar:</p>
+      
+      <div id="qrcode" style="display: flex; justify-content: center; margin: 15px 0;"></div>
+      
+      <p style="font-size: 14px; font-weight: bold;" id="pixValorExibicao"></p>
+      
+      <label style="font-size: 11px;">Pix Copia e Cola:</label>
+      <input type="text" id="pixCopiaCola" readonly style="font-size: 11px; background: #F1F5F9; text-align: center;">
+      
+      <button class="btn-blue" onclick="copiarPixCopiaCola()" style="margin-bottom: 10px;"><i class="fa-solid fa-copy"></i> Copiar Código Pix</button>
+      <button class="btn-green" onclick="confirmarPagamentoPix()">Já Pagou? Confirmar Venda</button>
+    </div>
+  </div>
+
+  <!-- MODAL COMPROVANTE -->
+  <div id="modalComprovante" class="modal-overlay escondido">
+    <div class="modal-card">
+      <i class="fa-solid fa-circle-check" style="font-size: 48px; color: var(--success); margin-bottom: 10px;"></i>
+      <h3 style="margin: 0; color: var(--primary);">Venda Concluída!</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">O comprovante está pronto para ser enviado ao cliente.</p>
+      
+      <div id="textoComprovantePreview" style="background: #F8FAFC; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-size: 12px; text-align: left; margin-bottom: 20px; max-height: 150px; overflow-y: auto; white-space: pre-wrap;"></div>
+
+      <button class="btn-whatsapp" onclick="enviarWhatsApp()" style="margin-bottom: 10px;"><i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Enviar no WhatsApp</button>
+      <button class="btn-blue btn-sm" onclick="fecharComprovante()" style="width: 100%;">Fechar / Nova Venda</button>
     </div>
   </div>
 
   <script>
     const URL_DB = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
-    let adminAtualKey = null, vendAtual = null, prodsG = {}, vendsG = {}, clisG = {};
+    let adminAtualKey = null, vendAtual = null, prodsG = {}, vendsG = {}, clisG = {}, chavePixAdmin = "";
+    let dadosVendaPendente = null;
 
     function mudarAbaLogin(tipo) {
       document.getElementById("msgErro").classList.add("escondido");
@@ -249,7 +299,7 @@
     }
 
     function mudarAdminTab(aba) {
-      ['caixa', 'vendas', 'estoque', 'clientes', 'vendedores', 'relatorios'].forEach(a => {
+      ['caixa', 'vendas', 'estoque', 'clientes', 'vendedores', 'config', 'relatorios'].forEach(a => {
         document.getElementById(`adm-${a}`).classList.add("escondido");
         document.getElementById(`m${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
       });
@@ -261,6 +311,7 @@
       if(aba === 'estoque') carregarEstoque();
       if(aba === 'clientes') carregarClientes();
       if(aba === 'vendedores') carregarVendedores();
+      if(aba === 'config') carregarConfigPix();
       if(aba === 'relatorios') carregarRelatorios();
     }
 
@@ -272,7 +323,6 @@
       
       if(!cod || !log || !sen) { err.innerText = "Preencha tudo!"; err.classList.remove("escondido"); return; }
       
-      // Valida se o código de ativação existe e não foi usado
       const resCod = await fetch(`${URL_DB}/codigos_ativacao/${cod}.json`);
       const valCod = await resCod.json();
       
@@ -281,8 +331,6 @@
       }
 
       const key = log.replace(/[^a-zA-Z0-9]/g, "_");
-      
-      // Salva usuário e marca o código como usado instantaneamente
       await fetch(`${URL_DB}/usuarios/${key}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({login: log, senha: sen}) });
       await fetch(`${URL_DB}/codigos_ativacao/${cod}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({usado: true}) });
 
@@ -300,6 +348,7 @@
       if(!u || u.senha !== sen) { err.innerText = "Usuário ou senha inválidos!"; err.classList.remove("escondido"); return; }
       
       adminAtualKey = key;
+      await buscarChavePixAdmin();
       document.getElementById("infoAdmin").innerText = `Admin: ${u.login}`;
       document.getElementById("tela-login").classList.add("escondido");
       document.getElementById("painel-admin").classList.remove("escondido");
@@ -315,7 +364,6 @@
       const todosAdminsVendedores = (await res.json()) || {};
       let achou = null;
 
-      // Procura em todos os administradores qual deles possui este código de vendedor
       Object.keys(todosAdminsVendedores).forEach(admKey => {
         const vendsDoAdmin = todosAdminsVendedores[admKey] || {};
         Object.keys(vendsDoAdmin).forEach(vKey => {
@@ -328,7 +376,8 @@
       if(!achou) { err.innerText = "Código de vendedor não encontrado!"; err.classList.remove("escondido"); return; }
       
       vendAtual = achou;
-      adminAtualKey = achou.adminKey; // Garante que o vendedor vai interagir apenas com o estoque/vendas do seu admin específico
+      adminAtualKey = achou.adminKey;
+      await buscarChavePixAdmin();
       
       document.getElementById("tituloVendLogado").innerText = `Caixa: ${vendAtual.nome}`;
       document.getElementById("tela-login").classList.add("escondido");
@@ -336,9 +385,29 @@
       preencherPDVVend();
     }
 
+    async function buscarChavePixAdmin() {
+      const res = await fetch(`${URL_DB}/config/${adminAtualKey}/chavePix.json`);
+      chavePixAdmin = (await res.json()) || "";
+    }
+
+    async function salvarChavePix() {
+      const chave = document.getElementById("inputChavePix").value.trim();
+      if(!chave) { alert("Insira uma chave Pix válida!"); return; }
+      await fetch(`${URL_DB}/config/${adminAtualKey}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({chavePix: chave}) });
+      chavePixAdmin = chave;
+      alert("Chave Pix salva com sucesso!");
+    }
+
+    async function carregarConfigPix() {
+      const res = await fetch(`${URL_DB}/config/${adminAtualKey}/chavePix.json`);
+      const val = (await res.json()) || "";
+      document.getElementById("inputChavePix").value = val;
+    }
+
     function deslogar() {
       vendAtual = null;
       adminAtualKey = null;
+      chavePixAdmin = "";
       document.getElementById("painel-admin").classList.add("escondido");
       document.getElementById("painel-vendedor").classList.add("escondido");
       document.getElementById("tela-login").classList.remove("escondido");
@@ -400,7 +469,8 @@
       if(pKey && prodsG[pKey]) document.getElementById(`${pref}Preco`).value = prodsG[pKey].venda;
     }
 
-    async function vender(origem) {
+    // Função central para iniciar a venda (verifica se é Pix ou vai direto)
+    function iniciarVenda(origem) {
       let vKey, cKey, pKey, qtd, pag, vNome, vCom;
       if(origem === 'Admin') {
         vKey = document.getElementById("pdvVend").value;
@@ -425,14 +495,125 @@
 
       const total = qtd * prod.venda;
       const comissao = total * (vCom / 100);
+      const clienteNome = cKey ? clisG[cKey].nome : "Consumidor Geral";
+      const clienteTel = cKey ? (clisG[cKey].tel || "") : "";
 
-      await fetch(`${URL_DB}/estoque/${adminAtualKey}/${pKey}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({qtd: prod.qtd - qtd}) });
+      dadosVendaPendente = { origem, vKey, cKey, pKey, prodNome: prod.nome, qtd, total, comissao, pag, vNome, clienteNome, clienteTel };
+
+      if(pag === 'Pix') {
+        if(!chavePixAdmin) {
+          alert("Aviso: O Administrador ainda não cadastrou a Chave Pix no perfil! A venda prosseguirá sem QR Code dinâmico, mas pode ser configurada na aba 'Pix / Config'.");
+        }
+        abrirModalPix(total);
+      } else {
+        concluirVendaProcesso();
+      }
+    }
+
+    // Gerador de Pix Payload EMV (Padrão Banco Central)
+    function gerarPayloadPix(chave, valor, nomeRecebedor) {
+      nomeRecebedor = nomeRecebedor ? nomeRecebedor.substring(0, 25) : "Loja";
+      function fmt(id, val) {
+        let len = String(val.length).padStart(2, '0');
+        return id + len + val;
+      }
+      let gui = fmt("00", "br.gov.bcb.pix") + fmt("01", chave);
+      let merchantAccount = fmt("26", gui);
+      let mcc = fmt("52", "0000");
+      let currency = fmt("53", "986"); // BRL
+      let amt = fmt("54", valor.toFixed(2));
+      let country = fmt("58", "BR");
+      let name = fmt("59", nomeRecebedor);
+      let city = fmt("60", "BRASIL");
+      let additionalData = fmt("62", fmt("05", "COMPRA"));
+      
+      let payloadWithoutCRC = merchantAccount + mcc + currency + amt + country + name + city + additionalData + "6304";
+      return payloadWithoutCRC + calcularCRC16(payloadWithoutCRC);
+    }
+
+    function calcularCRC16(str) {
+      let crc = 0xFFFF;
+      for (let c = 0; c < str.length; c++) {
+        crc ^= str.charCodeAt(c) << 8;
+        for (let i = 0; i < 8; i++) {
+          if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+          else crc = crc << 1;
+        }
+      }
+      let hex = (crc & 0xFFFF).toString(16).toUpperCase();
+      return hex.padStart(4, '0');
+    }
+
+    function abrirModalPix(valor) {
+      document.getElementById("qrcode").innerHTML = "";
+      document.getElementById("pixValorExibicao").innerText = `Valor: R$ ${valor.toFixed(2)}`;
+      
+      let payload = chavePixAdmin ? gerarPayloadPix(chavePixAdmin, valor, "Gestao Comercial") : "PIX_SEM_CHAVE_CADASTRADA";
+      document.getElementById("pixCopiaCola").value = payload;
+
+      new QRCode(document.getElementById("qrcode"), {
+        text: payload,
+        width: 200,
+        height: 200
+      });
+
+      document.getElementById("modalPix").classList.remove("escondido");
+    }
+
+    function copiarPixCopiaCola() {
+      const copyText = document.getElementById("pixCopiaCola");
+      copyText.select();
+      navigator.clipboard.writeText(copyText.value);
+      alert("Código Pix Copia e Cola copiado!");
+    }
+
+    function confirmarPagamentoPix() {
+      document.getElementById("modalPix").classList.add("escondido");
+      concluirVendaProcesso();
+    }
+
+    async function concluirVendaProcesso() {
+      const d = dadosVendaPendente;
+      const prod = prodsG[d.pKey];
+
+      await fetch(`${URL_DB}/estoque/${adminAtualKey}/${d.pKey}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({qtd: prod.qtd - d.qtd}) });
       await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
-        data: new Date().toLocaleString("pt-BR"), vendedor: vNome, cliente: cKey ? clisG[cKey].nome : "Geral", produto: prod.nome, total, comissao, pag
+        data: new Date().toLocaleString("pt-BR"), vendedor: d.vNome, cliente: d.clienteNome, produto: d.prodNome, total: d.total, comissao: d.comissao, pag: d.pag
       }) });
 
-      alert("Venda realizada com sucesso!");
-      if(origem === 'Admin') preencherPDVAdmin(); else preencherPDVVend();
+      if(d.origem === 'Admin') preencherPDVAdmin(); else preencherPDVVend();
+
+      // Monta o texto do comprovante para o cliente
+      let comprovanteTexto = `*RECIBO DE VENDA - GESTÃO COMERCIAL*\n`;
+      comprovanteTexto += `--------------------------------\n`;
+      comprovanteTexto += `Data: ${new Date().toLocaleString("pt-BR")}\n`;
+      comprovanteTexto += `Cliente: ${d.clienteNome}\n`;
+      comprovanteTexto += `Vendedor: ${d.vNome}\n`;
+      comprovanteTexto += `--------------------------------\n`;
+      comprovanteTexto += `Produto: ${d.prodNome}\n`;
+      comprovanteTexto += `Quantidade: ${d.qtd} UN\n`;
+      comprovanteTexto += `Forma de Pagamento: ${d.pag}\n`;
+      comprovanteTexto += `*VALOR TOTAL: R$ ${d.total.toFixed(2)}*\n`;
+      comprovanteTexto += `--------------------------------\n`;
+      comprovanteTexto += `Obrigado pela preferência! Volte sempre.`;
+
+      document.getElementById("textoComprovantePreview").innerText = comprovanteTexto;
+      document.getElementById("modalComprovante").classList.remove("escondido");
+    }
+
+    function enviarWhatsApp() {
+      const texto = document.getElementById("textoComprovantePreview").innerText;
+      let tel = dadosVendaPendente.clienteTel.replace(/\D/g, '');
+      let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+      if(tel) {
+        url = `https://wa.me/55${tel}?text=${encodeURIComponent(texto)}`;
+      }
+      window.open(url, '_blank');
+    }
+
+    function fecharComprovante() {
+      document.getElementById("modalComprovante").classList.add("escondido");
+      dadosVendaPendente = null;
     }
 
     async function salvarProduto() {
@@ -480,7 +661,6 @@
       if(!nome || isNaN(comissao)) { alert("Preencha nome e comissão!"); return; }
       const codigo5 = Math.floor(10000 + Math.random() * 90000).toString();
       
-      // Salva dentro do nó específico do administrador atual para evitar mistura
       await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, comissao, codigo: codigo5}) });
       document.getElementById("vNome").value = ""; document.getElementById("vComissao").value = "";
       alert(`Vendedor criado com sucesso!\nCódigo de acesso: ${codigo5}`);
