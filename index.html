@@ -8,8 +8,6 @@
   <meta name="theme-color" content="#0F172A">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Biblioteca para gerar QR Code visualmente -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     :root {
@@ -64,9 +62,9 @@
     .secao { background: #F8FAFC; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border-color); margin-bottom: 25px; }
     .secao h3 { margin-top: 0; margin-bottom: 15px; font-size: 16px; color: var(--primary); font-weight: 600; }
 
-    .table-responsive { width: 100%; overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border-color); background: white; }
+    .table-responsive { width: 100%; overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border-color); background: white; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
-    th, td { padding: 14px 16px; font-size: 13px; }
+    th, td { padding: 12px 16px; font-size: 13px; }
     th { background: var(--primary); color: white; font-weight: 600; }
     tr:not(:last-child) td { border-bottom: 1px solid var(--border-color); }
 
@@ -132,12 +130,11 @@
 
     <div class="tabs">
       <div id="mCaixa" class="tab ativa" onclick="mudarAdminTab('caixa')">Caixa</div>
-      <div id="mVendas" class="tab" onclick="mudarAdminTab('vendas')">PDV</div>
+      <div id="mVendas" class="tab" onclick="mudarAdminTab('vendas')">PDV (Carrinho)</div>
       <div id="mEstoque" class="tab" onclick="mudarAdminTab('estoque')">Estoque</div>
       <div id="mClientes" class="tab" onclick="mudarAdminTab('clientes')">Clientes/Fiado</div>
       <div id="mHistorico" class="tab" onclick="mudarAdminTab('historico')">Histórico 4 Sem.</div>
       <div id="mVendedores" class="tab" onclick="mudarAdminTab('vendedores')">Vendedores</div>
-      <div id="mConfig" class="tab" onclick="mudarAdminTab('config')">Pix / Config</div>
       <div id="mRelatorios" class="tab" onclick="mudarAdminTab('relatorios')">Relatórios</div>
     </div>
 
@@ -148,7 +145,7 @@
       </div>
       <div class="secao" id="boxAbertura">
         <h3>Abrir Caixa</h3>
-        <label>Valor Inicial:</label><input type="number" id="valInicial" step="0.01">
+        <label>Valor Inicial:</label><input type="number" id="valInicial" step="0.01" value="0.00">
         <button class="btn-green" onclick="abrirCaixa()">Abrir Caixa</button>
       </div>
       <div class="secao escondido" id="boxOperacao">
@@ -159,20 +156,36 @@
 
     <div id="adm-vendas" class="escondido">
       <div class="secao">
-        <h3>Frente de Caixa (Admin)</h3>
+        <h3>Frente de Caixa (Carrinho Múltiplo - Admin)</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
           <div><label>Vendedor:</label><select id="pdvVend"></select></div>
           <div><label>Cliente:</label><select id="pdvCli"></select></div>
           <div>
-            <label>Pesquisar / Filtrar Produto:</label>
-            <input type="text" id="filtroProdAdmin" placeholder="Digite nome ou código..." oninput="filtrarProdutosPDV('Admin')">
+            <label>Pesquisar Produto (Nome / Código):</label>
+            <input type="text" id="filtroProdAdmin" placeholder="Digite para filtrar..." oninput="filtrarProdutosPDV('Admin')">
           </div>
           <div><label>Produto:</label><select id="pdvProd" onchange="mudaPrecoAdmin()"></select></div>
           <div><label>Qtd:</label><input type="number" id="pdvQtd" value="1" min="1"></div>
-          <div><label>Preço:</label><input type="number" id="pdvPreco" readonly style="background:#E2E8F0"></div>
-          <div><label>Pagamento:</label><select id="pdvPag"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Fiado">Fiado</option></select></div>
+          <div><label>Preço Unitário:</label><input type="number" id="pdvPreco" readonly style="background:#E2E8F0"></div>
         </div>
-        <button class="btn-green" onclick="iniciarVenda('Admin')" style="margin-top:15px;">Finalizar Venda</button>
+        <button class="btn-blue btn-sm" onclick="adicionarAoCarrinho('Admin')" style="margin-top:10px;"><i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho</button>
+      </div>
+
+      <div class="secao">
+        <h3>Itens no Carrinho</h3>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Produto</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th><th>Ação</th></tr></thead>
+            <tbody id="tabelaCarrinhoAdmin"><tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Carrinho vazio</td></tr></tbody>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+          <div style="font-size: 18px; font-weight: bold;">Total: <span id="totalCarrinhoAdmin" style="color: var(--success);">R$ 0,00</span></div>
+          <div style="display: flex; gap: 10px; align-items: center; width: 300px;">
+            <select id="pdvPagAdmin" style="margin:0;"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Fiado">Fiado</option></select>
+            <button class="btn-green" onclick="finalizarVendaGeral('Admin')">Finalizar Venda</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -202,7 +215,7 @@
         <h3>Cadastrar Cliente</h3>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
           <div><label>Nome:</label><input type="text" id="cNome"></div>
-          <div><label>Telefone (com DDD para WhatsApp):</label><input type="text" id="cTel" placeholder="Ex: 11999999999"></div>
+          <div><label>Telefone (com DDD):</label><input type="text" id="cTel" placeholder="Ex: 11999999999"></div>
         </div>
         <button class="btn-green" onclick="salvarCliente()">Salvar Cliente</button>
       </div>
@@ -212,7 +225,7 @@
     <div id="adm-historico" class="escondido">
       <div class="secao">
         <h3>Histórico de Compras por Cliente (Últimas 4 Semanas)</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Selecione o cliente para verificar todos os itens adquiridos recentemente e resolver eventuais problemas.</p>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Selecione o cliente para verificar todos os itens adquiridos recentemente.</p>
         <label>Escolher Cliente:</label>
         <select id="selectClienteHistorico" onchange="carregarHistoricoCliente()"></select>
       </div>
@@ -220,10 +233,10 @@
         <table>
           <thead>
             <tr>
+              <th>ID Venda</th>
               <th>Data/Hora</th>
               <th>Vendedor</th>
-              <th>Produto</th>
-              <th>Qtd</th>
+              <th>Itens Comprados</th>
               <th>Total</th>
               <th>Forma Pag.</th>
             </tr>
@@ -247,26 +260,12 @@
       <div class="table-responsive"><table><thead><tr><th>Nome</th><th>Código de 5 Dígitos</th><th>Comissão</th><th>Ação</th></tr></thead><tbody id="tabelaVendedores"></tbody></table></div>
     </div>
 
-    <div id="adm-config" class="escondido">
-      <div class="secao">
-        <h3>Configuração de Chave Pix para Recebimento</h3>
-        <p style="font-size: 13px; color: var(--text-muted);">Insira sua chave Pix cadastrada (CPF, CNPJ, E-mail, Telefone ou Chave Aleatória). Ela será usada para gerar o QR Code automático nas vendas Pix dos seus vendedores.</p>
-        <label>Sua Chave Pix:</label>
-        <input type="text" id="inputChavePix" placeholder="Ex: meuemail@gmail.com ou 11999999999">
-        <label>Nome do Beneficiário (Titular da Conta):</label>
-        <input type="text" id="inputNomePix" placeholder="Ex: Joao da Silva">
-        <label>Cidade do Titular:</label>
-        <input type="text" id="inputCidadePix" value="BRASIL" placeholder="Ex: Sao Paulo">
-        <button class="btn-green" onclick="salvarChavePix()">Salvar Dados Pix</button>
-      </div>
-    </div>
-
     <div id="adm-relatorios" class="escondido">
       <div class="resumo-cards">
         <div class="box"><h4>Faturamento</h4><p id="rFat">R$ 0,00</p></div>
         <div class="box"><h4>Comissões</h4><p id="rCom">R$ 0,00</p></div>
       </div>
-      <div class="table-responsive"><table><thead><tr><th>Data</th><th>Vendedor</th><th>Cliente</th><th>Produto</th><th>Total</th></tr></thead><tbody id="tabelaVendas"></tbody></table></div>
+      <div class="table-responsive"><table><thead><tr><th>ID Venda</th><th>Data</th><th>Vendedor</th><th>Cliente</th><th>Resumo dos Itens</th><th>Total</th></tr></thead><tbody id="tabelaVendas"></tbody></table></div>
     </div>
   </div>
 
@@ -280,37 +279,35 @@
       <button class="btn-red btn-sm" onclick="deslogar()">Sair</button>
     </div>
     <div class="secao">
-      <h3>Registrar Venda</h3>
+      <h3>Frente de Caixa (Carrinho Múltiplo - Vendedor)</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         <div><label>Cliente:</label><select id="vPdvCli"></select></div>
         <div>
-          <label>Pesquisar / Filtrar Produto:</label>
-          <input type="text" id="filtroProdVend" placeholder="Digite nome ou código..." oninput="filtrarProdutosPDV('Vendedor')">
+          <label>Pesquisar Produto (Nome / Código):</label>
+          <input type="text" id="filtroProdVend" placeholder="Digite para filtrar..." oninput="filtrarProdutosPDV('Vendedor')">
         </div>
         <div><label>Produto:</label><select id="vPdvProd" onchange="mudaPrecoVend()"></select></div>
         <div><label>Qtd:</label><input type="number" id="vPdvQtd" value="1" min="1"></div>
-        <div><label>Preço:</label><input type="number" id="vPdvPreco" readonly style="background:#E2E8F0"></div>
-        <div><label>Pagamento:</label><select id="vPdvPag"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Fiado">Fiado</option></select></div>
+        <div><label>Preço Unitário:</label><input type="number" id="vPdvPreco" readonly style="background:#E2E8F0"></div>
       </div>
-      <button class="btn-green" onclick="iniciarVenda('Vendedor')" style="margin-top:15px;">Concluir Venda</button>
+      <button class="btn-blue btn-sm" onclick="adicionarAoCarrinho('Vendedor')" style="margin-top:10px;"><i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho</button>
     </div>
-  </div>
 
-  <!-- MODAL PIX -->
-  <div id="modalPix" class="modal-overlay escondido">
-    <div class="modal-card">
-      <h3 style="margin-top: 0; color: var(--primary);"><i class="fa-brands fa-pix" style="color: #00BA88;"></i> Pagamento via Pix</h3>
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Escaneie o QR Code abaixo com o aplicativo do banco para pagar:</p>
-      
-      <div id="qrcode" style="display: flex; justify-content: center; margin: 15px 0;"></div>
-      
-      <p style="font-size: 14px; font-weight: bold;" id="pixValorExibicao"></p>
-      
-      <label style="font-size: 11px;">Pix Copia e Cola:</label>
-      <input type="text" id="pixCopiaCola" readonly style="font-size: 11px; background: #F1F5F9; text-align: center;">
-      
-      <button class="btn-blue" onclick="copiarPixCopiaCola()" style="margin-bottom: 10px;"><i class="fa-solid fa-copy"></i> Copiar Código Pix</button>
-      <button class="btn-green" onclick="confirmarPagamentoPix()">Já Pagou? Confirmar Venda</button>
+    <div class="secao">
+      <h3>Itens no Carrinho</h3>
+      <div class="table-responsive">
+        <table>
+          <thead><tr><th>Produto</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th><th>Ação</th></tr></thead>
+          <tbody id="tabelaCarrinhoVendedor"><tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Carrinho vazio</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+        <div style="font-size: 18px; font-weight: bold;">Total: <span id="totalCarrinhoVendedor" style="color: var(--success);">R$ 0,00</span></div>
+        <div style="display: flex; gap: 10px; align-items: center; width: 300px;">
+          <select id="pdvPagVendedor" style="margin:0;"><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Fiado">Fiado</option></select>
+          <button class="btn-green" onclick="finalizarVendaGeral('Vendedor')">Concluir Venda</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -330,9 +327,33 @@
 
   <script>
     const URL_DB = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
-    let adminAtualKey = null, vendAtual = null, prodsG = {}, vendsG = {}, clisG = "";
-    let dadosPixAdmin = { chave: "", nome: "", cidade: "BRASIL" };
+    let adminAtualKey = null, vendAtual = null;
+    let prodsG = {}, vendsG = {}, clisG = {};
+    let carrinhoAdmin = [], carrinhoVendedor = [];
     let dadosVendaPendente = null;
+
+    // VERIFICAÇÃO AUTOMÁTICA AO RECARREGAR A PÁGINA
+    window.addEventListener('DOMContentLoaded', async () => {
+      const sessaoSalva = localStorage.getItem('sessao_gestao_comercial');
+      if (sessaoSalva) {
+        const sessao = JSON.parse(sessaoSalva);
+        adminAtualKey = sessao.adminKey;
+
+        if (sessao.tipo === 'admin') {
+          document.getElementById("infoAdmin").innerText = `Admin: ${sessao.login}`;
+          document.getElementById("tela-login").classList.add("escondido");
+          document.getElementById("painel-admin").classList.remove("escondido");
+          mudarAdminTab('caixa');
+        } else if (sessao.tipo === 'vendedor') {
+          vendAtual = sessao.vendedorObj;
+          await carregarCacheGlobal();
+          document.getElementById("tituloVendLogado").innerText = `Caixa: ${vendAtual.nome}`;
+          document.getElementById("tela-login").classList.add("escondido");
+          document.getElementById("painel-vendedor").classList.remove("escondido");
+          preencherPDVVend();
+        }
+      }
+    });
 
     function mudarAbaLogin(tipo) {
       document.getElementById("msgErro").classList.add("escondido");
@@ -345,7 +366,7 @@
     }
 
     function mudarAdminTab(aba) {
-      ['caixa', 'vendas', 'estoque', 'clientes', 'historico', 'vendedores', 'config', 'relatorios'].forEach(a => {
+      ['caixa', 'vendas', 'estoque', 'clientes', 'historico', 'vendedores', 'relatorios'].forEach(a => {
         document.getElementById(`adm-${a}`).classList.add("escondido");
         document.getElementById(`m${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
       });
@@ -358,7 +379,6 @@
       if(aba === 'clientes') carregarClientes();
       if(aba === 'historico') carregarSelectClientesHistorico();
       if(aba === 'vendedores') carregarVendedores();
-      if(aba === 'config') carregarConfigPix();
       if(aba === 'relatorios') carregarRelatorios();
     }
 
@@ -395,7 +415,14 @@
       if(!u || u.senha !== sen) { err.innerText = "Usuário ou senha inválidos!"; err.classList.remove("escondido"); return; }
       
       adminAtualKey = key;
-      await buscarDadosPixAdmin();
+
+      // SALVA A SESSÃO DO ADMIN NO LOCALSTORAGE
+      localStorage.setItem('sessao_gestao_comercial', JSON.stringify({
+        tipo: 'admin',
+        adminKey: key,
+        login: u.login
+      }));
+
       document.getElementById("infoAdmin").innerText = `Admin: ${u.login}`;
       document.getElementById("tela-login").classList.add("escondido");
       document.getElementById("painel-admin").classList.remove("escondido");
@@ -424,60 +451,48 @@
       
       vendAtual = achou;
       adminAtualKey = achou.adminKey;
-      await buscarDadosPixAdmin();
       
+      // SALVA A SESSÃO DO VENDEDOR NO LOCALSTORAGE
+      localStorage.setItem('sessao_gestao_comercial', JSON.stringify({
+        tipo: 'vendedor',
+        adminKey: adminAtualKey,
+        vendedorObj: vendAtual
+      }));
+
+      await carregarCacheGlobal();
+
       document.getElementById("tituloVendLogado").innerText = `Caixa: ${vendAtual.nome}`;
       document.getElementById("tela-login").classList.add("escondido");
       document.getElementById("painel-vendedor").classList.remove("escondido");
       preencherPDVVend();
     }
 
-    async function buscarDadosPixAdmin() {
-      const res = await fetch(`${URL_DB}/config/${adminAtualKey}.json`);
-      const config = (await res.json()) || {};
-      dadosPixAdmin = {
-        chave: config.chavePix || "",
-        nome: config.nomePix || "Loja",
-        cidade: config.cidadePix || "BRASIL"
-      };
-    }
-
-    async function salvarChavePix() {
-      const chave = document.getElementById("inputChavePix").value.trim();
-      const nomePix = document.getElementById("inputNomePix").value.trim() || "Loja";
-      const cidadePix = document.getElementById("inputCidadePix").value.trim() || "BRASIL";
-      
-      if(!chave) { alert("Insira uma chave Pix válida!"); return; }
-      
-      await fetch(`${URL_DB}/config/${adminAtualKey}.json`, { 
-        method: "PATCH", 
-        headers: {"Content-Type": "application/json"}, 
-        body: JSON.stringify({ chavePix: chave, nomePix: nomePix, cidadePix: cidadePix }) 
-      });
-      
-      dadosPixAdmin = { chave, nome: nomePix, cidade: cidadePix };
-      alert("Dados Pix salvos com sucesso!");
-    }
-
-    async function carregarConfigPix() {
-      const res = await fetch(`${URL_DB}/config/${adminAtualKey}.json`);
-      const config = (await res.json()) || {};
-      document.getElementById("inputChavePix").value = config.chavePix || "";
-      document.getElementById("inputNomePix").value = config.nomePix || "";
-      document.getElementById("inputCidadePix").value = config.cidadePix || "BRASIL";
+    async function carregarCacheGlobal() {
+      const [resC, resP, resV] = await Promise.all([
+        fetch(`${URL_DB}/clientes/${adminAtualKey}.json`),
+        fetch(`${URL_DB}/estoque/${adminAtualKey}.json`),
+        fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`)
+      ]);
+      clisG = (await resC.json()) || {};
+      prodsG = (await resP.json()) || {};
+      vendsG = (await resV.json()) || {};
     }
 
     function deslogar() {
+      // LIMPA A SESSÃO SALVA AO SAIR
+      localStorage.removeItem('sessao_gestao_comercial');
+      
       vendAtual = null;
       adminAtualKey = null;
-      dadosPixAdmin = { chave: "", nome: "", cidade: "BRASIL" };
+      carrinhoAdmin = [];
+      carrinhoVendedor = [];
       document.getElementById("painel-admin").classList.add("escondido");
       document.getElementById("painel-vendedor").classList.add("escondido");
       document.getElementById("tela-login").classList.remove("escondido");
     }
 
     async function abrirCaixa() {
-      const val = Number(document.getElementById("valInicial").value);
+      const val = Number(document.getElementById("valInicial").value) || 0;
       const hoje = new Date().toISOString().split('T')[0];
       await fetch(`${URL_DB}/caixa/${adminAtualKey}/${hoje}.json`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({status: "aberto", abertura: val}) });
       carregarCaixa();
@@ -505,27 +520,38 @@
     }
 
     async function preencherPDVAdmin() {
-      const resV = await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`); vendsG = (await resV.json()) || {};
-      const selV = document.getElementById("pdvVend"); selV.innerHTML = "";
+      await carregarCacheGlobal();
+      const selV = document.getElementById("pdvVend"); 
+      selV.innerHTML = "";
       Object.keys(vendsG).forEach(k => selV.innerHTML += `<option value="${k}">${vendsG[k].nome}</option>`);
       carregarDadosComunsPDV('pdv');
     }
 
-    async function preencherPDVVend() { carregarDadosComunsPDV('vPdv'); }
+    async function preencherPDVVend() { 
+      await carregarCacheGlobal();
+      carregarDadosComunsPDV('vPdv'); 
+    }
 
-    async function carregarDadosComunsPDV(pref) {
-      const resC = await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`); clisG = (await resC.json()) || {};
-      const selC = document.getElementById(`${pref}Cli`); selC.innerHTML = `<option value="">Consumidor Geral</option>`;
+    function carregarDadosComunsPDV(pref) {
+      const selC = document.getElementById(`${pref}Cli`); 
+      selC.innerHTML = `<option value="">Consumidor Geral</option>`;
       Object.keys(clisG).forEach(k => selC.innerHTML += `<option value="${k}">${clisG[k].nome}</option>`);
 
-      const resP = await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`); prodsG = (await resP.json()) || {};
       popularSelectProdutos(pref, prodsG);
     }
 
     function popularSelectProdutos(pref, listaProds) {
       const selP = document.getElementById(`${pref}Prod`); 
       selP.innerHTML = "";
-      Object.keys(listaProds).forEach(k => {
+      const chaves = Object.keys(listaProds);
+      
+      if(chaves.length === 0) {
+        selP.innerHTML = `<option value="">Nenhum produto cadastrado</option>`;
+        document.getElementById(`${pref}Preco`).value = "";
+        return;
+      }
+
+      chaves.forEach(k => {
         let p = listaProds[k];
         let codTxt = p.codBarras ? ` [Cód: ${p.codBarras}]` : "";
         selP.innerHTML += `<option value="${k}">${p.nome}${codTxt} (Est: ${p.qtd})</option>`;
@@ -554,152 +580,184 @@
 
     function atualizaPreco(pref) {
       const pKey = document.getElementById(`${pref}Prod`).value;
-      if(pKey && prodsG[pKey]) document.getElementById(`${pref}Preco`).value = prodsG[pKey].venda;
+      if(pKey && prodsG[pKey]) {
+        document.getElementById(`${pref}Preco`).value = prodsG[pKey].venda.toFixed(2);
+      } else {
+        document.getElementById(`${pref}Preco`).value = "";
+      }
     }
 
-    function iniciarVenda(origem) {
-      let vKey, cKey, pKey, qtd, pag, vNome, vCom;
-      if(origem === 'Admin') {
+    function adicionarAoCarrinho(tipo) {
+      const pref = tipo === 'Admin' ? 'pdv' : 'vPdv';
+      const pKey = document.getElementById(`${pref}Prod`).value;
+      const qtd = Number(document.getElementById(`${pref}Qtd`).value);
+
+      if(!pKey || !prodsG[pKey] || qtd <= 0) { alert("Selecione um produto e quantidade válida!"); return; }
+      const prod = prodsG[pKey];
+      
+      let carrinhoRef = tipo === 'Admin' ? carrinhoAdmin : carrinhoVendedor;
+      let itemExistente = carrinhoRef.find(item => item.pKey === pKey);
+      let qtdAtualNoCarrinho = itemExistente ? itemExistente.qtd : 0;
+
+      if((qtd + qtdAtualNoCarrinho) > prod.qtd) {
+        alert("Estoque insuficiente para a quantidade total desejada!"); return;
+      }
+
+      if(itemExistente) {
+        itemExistente.qtd += qtd;
+        itemExistente.subtotal = itemExistente.qtd * itemExistente.preco;
+      } else {
+        carrinhoRef.push({
+          pKey: pKey,
+          nome: prod.nome,
+          qtd: qtd,
+          preco: prod.venda,
+          subtotal: qtd * prod.venda
+        });
+      }
+
+      renderizarCarrinho(tipo);
+    }
+
+    function removerDoCarrinho(tipo, index) {
+      if(tipo === 'Admin') {
+        carrinhoAdmin.splice(index, 1);
+        renderizarCarrinho('Admin');
+      } else {
+        carrinhoVendedor.splice(index, 1);
+        renderizarCarrinho('Vendedor');
+      }
+    }
+
+    function renderizarCarrinho(tipo) {
+      const isAdm = tipo === 'Admin';
+      const carrinhoRef = isAdm ? carrinhoAdmin : carrinhoVendedor;
+      const tbody = document.getElementById(isAdm ? "tabelaCarrinhoAdmin" : "tabelaCarrinhoVendedor");
+      const totalEl = document.getElementById(isAdm ? "totalCarrinhoAdmin" : "totalCarrinhoVendedor");
+
+      tbody.innerHTML = "";
+      let totalGeral = 0;
+
+      if(carrinhoRef.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Carrinho vazio</td></tr>`;
+        totalEl.innerText = "R$ 0,00";
+        return;
+      }
+
+      carrinhoRef.forEach((item, index) => {
+        totalGeral += item.subtotal;
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${item.nome}</strong></td>
+            <td>${item.qtd} UN</td>
+            <td>R$ ${item.preco.toFixed(2)}</td>
+            <td>R$ ${item.subtotal.toFixed(2)}</td>
+            <td><button class="btn-red btn-sm" onclick="removerDoCarrinho('${tipo}', ${index})">Remover</button></td>
+          </tr>
+        `;
+      });
+
+      totalEl.innerText = "R$ " + totalGeral.toFixed(2);
+    }
+
+    function finalizarVendaGeral(tipo) {
+      const isAdm = tipo === 'Admin';
+      const carrinhoRef = isAdm ? carrinhoAdmin : carrinhoVendedor;
+
+      if(carrinhoRef.length === 0) { alert("O carrinho está vazio!"); return; }
+
+      let vKey, cKey, pag, vNome, vCom;
+      if(isAdm) {
         vKey = document.getElementById("pdvVend").value;
         cKey = document.getElementById("pdvCli").value;
-        pKey = document.getElementById("pdvProd").value;
-        qtd = Number(document.getElementById("pdvQtd").value);
-        pag = document.getElementById("pdvPag").value;
-        if(!vKey) { alert("Selecione o vendedor!"); return; }
+        pag = document.getElementById("pdvPagAdmin").value;
+        if(!vKey || !vendsG[vKey]) { alert("Selecione um vendedor válido!"); return; }
         vNome = vendsG[vKey].nome; vCom = vendsG[vKey].comissao;
       } else {
         vKey = vendAtual.key;
         cKey = document.getElementById("vPdvCli").value;
-        pKey = document.getElementById("vPdvProd").value;
-        qtd = Number(document.getElementById("vPdvQtd").value);
-        pag = document.getElementById("vPdvPag").value;
+        pag = document.getElementById("pdvPagVendedor").value;
         vNome = vendAtual.nome; vCom = vendAtual.comissao;
       }
 
-      if(!pKey || qtd <= 0) { alert("Selecione um produto e quantidade!"); return; }
-      const prod = prodsG[pKey];
-      if(qtd > prod.qtd) { alert("Estoque insuficiente!"); return; }
+      const clienteNome = cKey && clisG[cKey] ? clisG[cKey].nome : "Consumidor Geral";
+      const clienteTel = cKey && clisG[cKey] ? (clisG[cKey].tel || "") : "";
 
-      const total = qtd * prod.venda;
-      const comissao = total * (vCom / 100);
-      const clienteNome = cKey ? clisG[cKey].nome : "Consumidor Geral";
-      const clienteTel = cKey ? (clisG[cKey].tel || "") : "";
+      let totalGeral = carrinhoRef.reduce((acc, item) => acc + item.subtotal, 0);
+      let comissaoGeral = totalGeral * (vCom / 100);
 
-      dadosVendaPendente = { origem, vKey, cKey, pKey, prodNome: prod.nome, qtd, total, comissao, pag, vNome, clienteNome, clienteTel };
+      const vendaID = "V-" + Math.floor(100000 + Math.random() * 900000);
 
-      if(pag === 'Pix') {
-        if(!dadosPixAdmin.chave) {
-          alert("Aviso: O Administrador ainda não cadastrou a Chave Pix no perfil! Vá na aba 'Pix / Config' para preencher.");
-        }
-        abrirModalPix(total);
-      } else {
-        concluirVendaProcesso();
-      }
-    }
+      dadosVendaPendente = {
+        tipo, vendaID, vKey, cKey, vNome, clienteNome, clienteTel, pag,
+        itens: [...carrinhoRef], total: totalGeral, comissao: comissaoGeral
+      };
 
-    // Gerador de Pix Payload EMV Oficial (Padrão Banco Central do Brasil)
-    function gerarPayloadPix(chave, valor, nomeRecebedor, cidadeRecebedor) {
-      nomeRecebedor = (nomeRecebedor || "Loja").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25).toUpperCase();
-      cidadeRecebedor = (cidadeRecebedor || "BRASIL").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15).toUpperCase();
-
-      function formatarCampo(id, valorCampo) {
-        let tamanho = String(valorCampo.length).padStart(2, '0');
-        return id + tamanho + valorCampo;
-      }
-
-      let payload = formatarCampo("00", "01");
-      let gui = formatarCampo("00", "br.gov.bcb.pix");
-      let chavePixCampo = formatarCampo("01", chave);
-      payload += formatarCampo("26", gui + chavePixCampo);
-      payload += formatarCampo("52", "0000");
-      payload += formatarCampo("53", "986");
-      payload += formatarCampo("54", valor.toFixed(2));
-      payload += formatarCampo("58", "BR");
-      payload += formatarCampo("59", nomeRecebedor);
-      payload += formatarCampo("60", cidadeRecebedor);
-      let txId = formatarCampo("05", "***");
-      payload += formatarCampo("62", txId);
-      payload += "6304";
-      payload += calcularCRC16(payload);
-
-      return payload;
-    }
-
-    function calcularCRC16(str) {
-      let crc = 0xFFFF;
-      for (let c = 0; c < str.length; c++) {
-        crc ^= str.charCodeAt(c) << 8;
-        for (let i = 0; i < 8; i++) {
-          if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
-          else crc = crc << 1;
-        }
-      }
-      let hex = (crc & 0xFFFF).toString(16).toUpperCase();
-      return hex.padStart(4, '0');
-    }
-
-    function abrirModalPix(valor) {
-      document.getElementById("qrcode").innerHTML = "";
-      document.getElementById("pixValorExibicao").innerText = `Valor: R$ ${valor.toFixed(2)}`;
-      
-      let payload = dadosPixAdmin.chave ? gerarPayloadPix(dadosPixAdmin.chave, valor, dadosPixAdmin.nome, dadosPixAdmin.cidade) : "PIX_SEM_CHAVE_CADASTRADA";
-      document.getElementById("pixCopiaCola").value = payload;
-
-      new QRCode(document.getElementById("qrcode"), {
-        text: payload,
-        width: 200,
-        height: 200
-      });
-
-      document.getElementById("modalPix").classList.remove("escondido");
-    }
-
-    function copiarPixCopiaCola() {
-      const copyText = document.getElementById("pixCopiaCola");
-      copyText.select();
-      navigator.clipboard.writeText(copyText.value);
-      alert("Código Pix Copia e Cola copiado!");
-    }
-
-    function confirmarPagamentoPix() {
-      document.getElementById("modalPix").classList.add("escondido");
       concluirVendaProcesso();
     }
 
     async function concluirVendaProcesso() {
       const d = dadosVendaPendente;
-      const prod = prodsG[d.pKey];
 
-      await fetch(`${URL_DB}/estoque/${adminAtualKey}/${d.pKey}.json`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({qtd: prod.qtd - d.qtd}) });
-      
+      for(let item of d.itens) {
+        const prod = prodsG[item.pKey];
+        if(!prod) continue;
+        const novoEstoque = Math.max(0, prod.qtd - item.qtd);
+        prod.qtd = novoEstoque;
+        await fetch(`${URL_DB}/estoque/${adminAtualKey}/${item.pKey}.json`, { 
+          method: "PATCH", 
+          headers: {"Content-Type": "application/json"}, 
+          body: JSON.stringify({qtd: novoEstoque}) 
+        });
+      }
+
+      let resumoProdutos = d.itens.map(i => `${i.qtd}x ${i.nome}`).join(", ");
       const timestampServidor = Date.now();
-      await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
-        timestamp: timestampServidor,
-        data: new Date().toLocaleString("pt-BR"), 
-        vendedor: d.vNome, 
-        clienteKey: d.cKey || "",
-        cliente: d.clienteNome, 
-        produto: d.prodNome, 
-        qtd: d.qtd,
-        total: d.total, 
-        comissao: d.comissao, 
-        pag: d.pag
-      }) });
 
-      if(d.origem === 'Admin') preencherPDVAdmin(); else preencherPDVVend();
+      await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`, { 
+        method: "POST", 
+        headers: {"Content-Type": "application/json"}, 
+        body: JSON.stringify({
+          vendaID: d.vendaID,
+          timestamp: timestampServidor,
+          data: new Date().toLocaleString("pt-BR"), 
+          vendedor: d.vNome, 
+          clienteKey: d.cKey || "",
+          cliente: d.clienteNome, 
+          produto: resumoProdutos,
+          itensCarrinho: d.itens,
+          total: d.total, 
+          comissao: d.comissao, 
+          pag: d.pag
+        }) 
+      });
+
+      if(d.tipo === 'Admin') {
+        carrinhoAdmin = [];
+        renderizarCarrinho('Admin');
+        preencherPDVAdmin();
+      } else {
+        carrinhoVendedor = [];
+        renderizarCarrinho('Vendedor');
+        preencherPDVVend();
+      }
 
       let comprovanteTexto = `*RECIBO DE VENDA - GESTÃO COMERCIAL*\n`;
       comprovanteTexto += `--------------------------------\n`;
+      comprovanteTexto += `ID da Compra: *${d.vendaID}*\n`;
       comprovanteTexto += `Data: ${new Date().toLocaleString("pt-BR")}\n`;
       comprovanteTexto += `Cliente: ${d.clienteNome}\n`;
       comprovanteTexto += `Vendedor: ${d.vNome}\n`;
       comprovanteTexto += `--------------------------------\n`;
-      comprovanteTexto += `Produto: ${d.prodNome}\n`;
-      comprovanteTexto += `Quantidade: ${d.qtd} UN\n`;
+      comprovanteTexto += `ITENS:\n`;
+      d.itens.forEach(i => {
+        comprovanteTexto += `- ${i.qtd}x ${i.nome} (R$ ${i.subtotal.toFixed(2)})\n`;
+      });
+      comprovanteTexto += `--------------------------------\n`;
       comprovanteTexto += `Forma de Pagamento: ${d.pag}\n`;
       comprovanteTexto += `*VALOR TOTAL: R$ ${d.total.toFixed(2)}*\n`;
       comprovanteTexto += `--------------------------------\n`;
-      comprovanteTexto += `Obrigado pela preferência! Volte sempre.`;
+      comprovanteTexto += `Guarde o ID para futuras consultas.\nObrigado pela preferência!`;
 
       document.getElementById("textoComprovantePreview").innerText = comprovanteTexto;
       document.getElementById("modalComprovante").classList.remove("escondido");
@@ -726,7 +784,7 @@
       const qtd = Number(document.getElementById("pQtd").value);
       const custo = Number(document.getElementById("pCusto").value);
       const venda = Number(document.getElementById("pVenda").value);
-      if(!nome) { alert("Preencha o nome!"); return; }
+      if(!nome) { alert("Preencha o nome do produto!"); return; }
       
       await fetch(`${URL_DB}/estoque/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, codBarras, qtd, custo, venda}) });
       document.getElementById("pNome").value = ""; 
@@ -745,7 +803,13 @@
       const tab = document.getElementById("tabelaEstoque"); 
       tab.innerHTML = "";
       
-      Object.keys(prodsG).forEach(k => {
+      const chaves = Object.keys(prodsG);
+      if(chaves.length === 0) {
+        tab.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Nenhum produto cadastrado.</td></tr>`;
+        return;
+      }
+
+      chaves.forEach(k => {
         let p = prodsG[k];
         let nomeMatch = p.nome.toLowerCase().includes(termo);
         let codMatch = p.codBarras && p.codBarras.toLowerCase().includes(termo);
@@ -755,12 +819,17 @@
         }
       });
     }
-    async function delEstoque(k) { await fetch(`${URL_DB}/estoque/${adminAtualKey}/${k}.json`, {method: "DELETE"}); carregarEstoque(); }
+    
+    async function delEstoque(k) { 
+      if(!confirm("Deseja realmente excluir este produto?")) return;
+      await fetch(`${URL_DB}/estoque/${adminAtualKey}/${k}.json`, {method: "DELETE"}); 
+      carregarEstoque(); 
+    }
 
     async function salvarCliente() {
       const nome = document.getElementById("cNome").value.trim();
       const tel = document.getElementById("cTel").value.trim();
-      if(!nome) { alert("Preencha o nome!"); return; }
+      if(!nome) { alert("Preencha o nome do cliente!"); return; }
       await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, tel, debito: 0}) });
       document.getElementById("cNome").value = ""; document.getElementById("cTel").value = "";
       carregarClientes();
@@ -769,19 +838,25 @@
     async function carregarClientes() {
       const res = await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`); clisG = (await res.json()) || {};
       const tab = document.getElementById("tabelaClientes"); tab.innerHTML = "";
-      Object.keys(clisG).forEach(k => {
+      const chaves = Object.keys(clisG);
+      
+      if(chaves.length === 0) {
+        tab.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhum cliente cadastrado.</td></tr>`;
+        return;
+      }
+
+      chaves.forEach(k => {
         let c = clisG[k];
         tab.innerHTML += `<tr><td><strong>${c.nome}</strong></td><td>${c.tel||'-'}</td><td style="color:var(--danger)">R$ ${(c.debito||0).toFixed(2)}</td><td>-</td></tr>`;
       });
     }
 
     async function carregarSelectClientesHistorico() {
-      const resC = await fetch(`${URL_DB}/clientes/${adminAtualKey}.json`); 
-      const clis = (await resC.json()) || {};
+      await carregarCacheGlobal();
       const sel = document.getElementById("selectClienteHistorico");
       sel.innerHTML = `<option value="">-- Selecione um cliente --</option>`;
-      Object.keys(clis).forEach(k => {
-        sel.innerHTML += `<option value="${k}">${clis[k].nome}</option>`;
+      Object.keys(clisG).forEach(k => {
+        sel.innerHTML += `<option value="${k}">${clisG[k].nome}</option>`;
       });
       document.getElementById("tabelaHistoricoCliente").innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Selecione um cliente acima.</td></tr>`;
     }
@@ -799,22 +874,21 @@
       const resV = await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`);
       const vendas = (await resV.json()) || {};
 
-      // Filtro das últimas 4 semanas (28 dias em milissegundos)
       const agora = Date.now();
       const limiteQuatroSemanas = agora - (28 * 24 * 60 * 60 * 1000);
 
       let achados = 0;
       Object.keys(vendas).forEach(vKey => {
         let v = vendas[vKey];
-        // Verifica se a venda pertence ao cliente selecionado e está no período de 4 semanas
         if(v.clienteKey === clienteKey && v.timestamp && v.timestamp >= limiteQuatroSemanas) {
           achados++;
+          let idVendaExibir = v.vendaID || "N/D";
           tab.innerHTML += `
             <tr>
+              <td><span style="background:#EFF6FF; color:var(--accent); padding:3px 6px; border-radius:4px; font-weight:bold; font-family:monospace;">${idVendaExibir}</span></td>
               <td>${v.data}</td>
               <td>${v.vendedor}</td>
               <td><strong>${v.produto}</strong></td>
-              <td>${v.qtd} UN</td>
               <td>R$ ${v.total.toFixed(2)}</td>
               <td>${v.pag}</td>
             </tr>
@@ -830,7 +904,7 @@
     async function salvarVendedor() {
       const nome = document.getElementById("vNome").value.trim();
       const comissao = Number(document.getElementById("vComissao").value);
-      if(!nome || isNaN(comissao)) { alert("Preencha nome e comissão!"); return; }
+      if(!nome || isNaN(comissao)) { alert("Preencha nome e comissão válida!"); return; }
       const codigo5 = Math.floor(10000 + Math.random() * 90000).toString();
       
       await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({nome, comissao, codigo: codigo5}) });
@@ -842,20 +916,42 @@
     async function carregarVendedores() {
       const res = await fetch(`${URL_DB}/vendedores/${adminAtualKey}.json`); vendsG = (await res.json()) || {};
       const tab = document.getElementById("tabelaVendedores"); tab.innerHTML = "";
-      Object.keys(vendsG).forEach(k => {
+      const chaves = Object.keys(vendsG);
+
+      if(chaves.length === 0) {
+        tab.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nenhum vendedor cadastrado.</td></tr>`;
+        return;
+      }
+
+      chaves.forEach(k => {
         let v = vendsG[k];
         tab.innerHTML += `<tr><td><strong>${v.nome}</strong></td><td><span style="background:#EFF6FF; color:var(--accent); padding:4px 8px; border-radius:4px; font-weight:bold; font-size:15px;">${v.codigo||'-----'}</span></td><td>${v.comissao}%</td><td><button class="btn-red btn-sm" onclick="delVendedor('${k}')">Excluir</button></td></tr>`;
       });
     }
-    async function delVendedor(k) { await fetch(`${URL_DB}/vendedores/${adminAtualKey}/${k}.json`, {method: "DELETE"}); carregarVendedores(); }
+    
+    async function delVendedor(k) { 
+      if(!confirm("Deseja realmente excluir este vendedor?")) return;
+      await fetch(`${URL_DB}/vendedores/${adminAtualKey}/${k}.json`, {method: "DELETE"}); 
+      carregarVendedores(); 
+    }
 
     async function carregarRelatorios() {
       const res = await fetch(`${URL_DB}/vendas/${adminAtualKey}.json`); const vendas = (await res.json()) || {};
       const tab = document.getElementById("tabelaVendas"); tab.innerHTML = "";
       let fat = 0, com = 0;
+      
+      const chaves = Object.keys(vendas);
+      if(chaves.length === 0) {
+        tab.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Nenhuma venda registrada.</td></tr>`;
+        document.getElementById("rFat").innerText = "R$ 0,00";
+        document.getElementById("rCom").innerText = "R$ 0,00";
+        return;
+      }
+
       Object.values(vendas).forEach(v => {
         fat += v.total; com += v.comissao;
-        tab.innerHTML += `<tr><td>${v.data}</td><td>${v.vendedor}</td><td>${v.cliente}</td><td>${v.produto}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`;
+        let idVendaExibir = v.vendaID || "N/D";
+        tab.innerHTML += `<tr><td><span style="background:#EFF6FF; color:var(--accent); padding:3px 6px; border-radius:4px; font-weight:bold; font-family:monospace;">${idVendaExibir}</span></td><td>${v.data}</td><td>${v.vendedor}</td><td>${v.cliente}</td><td>${v.produto}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`;
       });
       document.getElementById("rFat").innerText = "R$ " + fat.toFixed(2);
       document.getElementById("rCom").innerText = "R$ " + com.toFixed(2);
