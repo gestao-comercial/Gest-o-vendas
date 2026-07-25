@@ -6,11 +6,15 @@
   <title>Sistema de Gestão e Vendas</title>
 
   <!-- CONFIGURAÇÕES DE PWA (MANIFEST & TEMA) -->
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0F172A">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Gestão App">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+
+  <!-- FONTES E ÍCONES -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Manifest incorporado diretamente -->
   <link rel="manifest" href='data:application/manifest+json,{
@@ -19,8 +23,8 @@
     "description": "Aplicativo de Gestão de Vendas e Estoque",
     "start_url": "./index.html",
     "display": "standalone",
-    "background_color": "#f1f5f9",
-    "theme_color": "#0f172a",
+    "background_color": "#F8FAFC",
+    "theme_color": "#0F172A",
     "icons": [
       {
         "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
@@ -35,6 +39,531 @@
     ]
   }'>
 
+  <style>
+    :root {
+      --bg-main: #F1F5F9;
+      --card-bg: #FFFFFF;
+      --primary: #0F172A;
+      --primary-hover: #1E293B;
+      --accent: #2563EB;
+      --accent-hover: #1D4ED8;
+      --success: #16A34A;
+      --warning: #EA580C;
+      --danger: #DC2626;
+      --text-main: #1E293B;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    * { box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    
+    body { 
+      background: var(--bg-main); 
+      margin: 0; 
+      padding: 20px; 
+      color: var(--text-main); 
+      -webkit-user-select: none; 
+      user-select: none; 
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .card { 
+      background: var(--card-bg); 
+      padding: 30px; 
+      border-radius: var(--radius); 
+      box-shadow: var(--shadow); 
+      width: 100%;
+      max-width: 420px; 
+      margin: 20px auto; 
+      border: 1px solid var(--border-color);
+    }
+
+    .card-large { 
+      max-width: 1100px; 
+      margin: 0 auto; 
+      padding: 25px;
+    }
+    
+    /* Abas de Login/Navegação */
+    .tabs { 
+      display: flex; 
+      margin-bottom: 25px; 
+      border-bottom: 2px solid var(--border-color); 
+      gap: 5px;
+    }
+    .tab { 
+      flex: 1; 
+      text-align: center; 
+      padding: 12px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      color: var(--text-muted); 
+      font-size: 14px;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab:hover { color: var(--accent); }
+    .tab.ativa { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input, select { 
+      width: 100%; 
+      padding: 12px 14px; 
+      margin-bottom: 16px; 
+      border: 1px solid #CBD5E1; 
+      border-radius: 8px; 
+      font-size: 14px; 
+      color: var(--text-main);
+      background: #F8FAFC;
+      transition: all 0.2s;
+      -webkit-user-select: text; 
+      user-select: text; 
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    button { 
+      width: 100%; 
+      padding: 12px 16px; 
+      border: none; 
+      border-radius: 8px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      font-size: 14px; 
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:active { transform: scale(0.98); }
+
+    .btn-blue { background: var(--accent); color: white; }
+    .btn-blue:hover { background: var(--accent-hover); }
+
+    .btn-green { background: var(--success); color: white; }
+    .btn-green:hover { background: #15803D; }
+
+    .btn-orange { background: var(--warning); color: white; }
+    .btn-orange:hover { background: #C2410C; }
+
+    .btn-red { background: var(--danger); color: white; }
+    .btn-red:hover { background: #B91C1C; }
+
+    .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; display: inline-flex; }
+
+    .escondido { display: none !important; }
+    
+    .msg-erro { 
+      background: #FEE2E2;
+      color: var(--danger); 
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px; 
+      font-weight: 500; 
+      text-align: center; 
+      margin-top: 15px; 
+      border: 1px solid #FCA5A5;
+    }
+
+    /* Layout do App */
+    .header-app { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border-bottom: 1px solid var(--border-color); 
+      padding-bottom: 15px; 
+      margin-bottom: 20px; 
+    }
+
+    .resumo-cards { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+      gap: 15px; 
+      margin-bottom: 25px; 
+    }
+    
+    .box { 
+      background: #F8FAFC; 
+      padding: 20px; 
+      border-radius: var(--radius); 
+      border: 1px solid var(--border-color); 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .box h4 { margin: 0 0 8px 0; color: var(--text-muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .box p { margin: 0; font-size: 24px; font-weight: 700; color: var(--primary); }
+
+    .secao { 
+      background: #F8FAFC; 
+      padding: 20px; 
+      border-radius: var(--radius); 
+      border: 1px solid var(--border-color); 
+      margin-bottom: 25px; 
+    }
+    .secao h3 { margin-top: 0; margin-bottom: 15px; font-size: 16px; color: var(--primary); font-weight: 600; }
+
+    /* Tabelas modernizadas */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      background: white;
+    }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 14px 16px; font-size: 13px; }
+    th { background: var(--primary); color: white; font-weight: 600; }
+    tr:not(:last-child) td { border-bottom: 1px solid var(--border-color); }
+    tr:hover td { background: #F8FAFC; }
+
+    h2 { font-weight: 700; color: var(--primary); }
+
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .card { padding: 20px; }
+      .header-app { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= TELA DE LOGIN / PRIMEIRA ATIVAÇÃO ================= -->
+  <div id="tela-login" class="card">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <i class="fa-solid fa-boxes-stacked" style="font-size: 36px; color: var(--accent); margin-bottom: 10px;"></i>
+      <h2 style="margin: 0; font-size: 20px;">Acesso ao Sistema</h2>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Gerencie suas vendas e estoque com facilidade</p>
+    </div>
+    
+    <div class="tabs">
+      <div id="tab1" class="tab ativa" onclick="mudarAbaLogin('login', this)">Entrar</div>
+      <div id="tab2" class="tab" onclick="mudarAbaLogin('cadastro', this)">Primeiro Acesso</div>
+    </div>
+
+    <!-- Login Habitual -->
+    <div id="form-login">
+      <label>Usuário / Login:</label>
+      <input type="text" id="loginUsuario" placeholder="Digite seu usuário">
+      <label>Senha:</label>
+      <input type="password" id="senhaUsuario" placeholder="Digite sua senha">
+      <button class="btn-blue" onclick="entrarComSenha()"><i class="fa-solid fa-right-to-bracket"></i> Entrar no Sistema</button>
+    </div>
+
+    <!-- Ativação / Primeiro Acesso -->
+    <div id="form-cadastro" class="escondido">
+      <label>Código de Ativação:</label>
+      <input type="text" id="cadCodigo" placeholder="Ex: CAD-84A2" style="text-transform: uppercase;">
+      <label>Crie seu Usuário / Login:</label>
+      <input type="text" id="cadLogin" placeholder="Ex: joao_silva">
+      <label>Crie sua Senha:</label>
+      <input type="password" id="cadSenha" placeholder="Sua senha secreta">
+      <button class="btn-green" onclick="cadastrarEAtivar()"><i class="fa-solid fa-user-check"></i> Ativar Minha Conta</button>
+    </div>
+
+    <div id="msgErro" class="msg-erro escondido"></div>
+  </div>
+
+
+  <!-- ================= TELA PRINCIPAL DO SISTEMA ================= -->
+  <div id="tela-app" class="card card-large escondido">
+    
+    <!-- Cabeçalho -->
+    <div class="header-app">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="background: #EFF6FF; color: var(--accent); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+          <i class="fa-solid fa-briefcase"></i>
+        </div>
+        <div>
+          <h2 style="margin: 0; font-size: 18px;">Gestão de Vendas e Estoque</h2>
+          <span id="infoUsuario" style="font-size: 12px; color: var(--text-muted);"></span>
+        </div>
+      </div>
+      <button class="btn-red btn-sm" onclick="deslogar()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</button>
+    </div>
+
+    <!-- Menu de Navegação do App -->
+    <div class="tabs">
+      <div id="menuEstoque" class="tab ativa" onclick="mudarAbaApp('estoque')"><i class="fa-solid fa-box-archive"></i> Estoque</div>
+      <div id="menuVendedores" class="tab" onclick="mudarAbaApp('vendedores')"><i class="fa-solid fa-users"></i> Vendedores</div>
+      <div id="menuVendas" class="tab" onclick="mudarAbaApp('vendas')"><i class="fa-solid fa-cart-shopping"></i> Registrar Venda</div>
+      <div id="menuRelatorio" class="tab" onclick="mudarAbaApp('relatorio')"><i class="fa-solid fa-chart-pie"></i> Relatórios</div>
+    </div>
+
+    <!-- ================= ABA 1: ESTOQUE ================= -->
+    <div id="aba-estoque">
+      <div class="resumo-cards">
+        <div class="box">
+          <h4>Total de Produtos</h4>
+          <p id="totalProdutos">0</p>
+        </div>
+        <div class="box">
+          <h4>Itens em Estoque</h4>
+          <p id="totalItens">0 UN</p>
+        </div>
+        <div class="box">
+          <h4>Valor Total do Estoque</h4>
+          <p id="valorTotalEstoque" style="color: var(--success);">R$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="secao">
+        <h3><i class="fa-solid fa-circle-plus" style="color: var(--success);"></i> Cadastrar Novo Produto</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+          <div>
+            <label>Nome do Produto:</label>
+            <input type="text" id="pNome" placeholder="Ex: Coca-Cola 2L">
+          </div>
+          <div>
+            <label>Quantidade:</label>
+            <input type="number" id="pQtd" placeholder="Ex: 50">
+          </div>
+          <div>
+            <label>Preço Custo (R$):</label>
+            <input type="number" id="pCusto" step="0.01" placeholder="Ex: 5.50">
+          </div>
+          <div>
+            <label>Preço Venda (R$):</label>
+            <input type="number" id="pVenda" step="0.01" placeholder="Ex: 10.00">
+          </div>
+        </div>
+        <button class="btn-green" onclick="salvarProduto()" style="margin-top: 10px;"><i class="fa-solid fa-floppy-disk"></i> Salvar Produto</button>
+      </div>
+
+      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-boxes-stacked"></i> Estoque Atual</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Qtd Disponível</th>
+              <th>Custo Un.</th>
+              <th>Venda Un.</th>
+              <th>Total em Est.</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaEstoque">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Carregando estoque...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= ABA 2: VENDEDORES ================= -->
+    <div id="aba-vendedores" class="escondido">
+      <div class="secao">
+        <h3><i class="fa-solid fa-user-plus" style="color: var(--success);"></i> Cadastrar Vendedor / Atendente</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+          <div>
+            <label>Nome do Vendedor:</label>
+            <input type="text" id="vNome" placeholder="Ex: Carlos Silva">
+          </div>
+          <div>
+            <label>Comissão (%):</label>
+            <input type="number" id="vComissao" step="0.1" placeholder="Ex: 5">
+          </div>
+        </div>
+        <button class="btn-green" onclick="salvarVendedor()" style="margin-top: 10px;"><i class="fa-solid fa-floppy-disk"></i> Salvar Vendedor</button>
+      </div>
+
+      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-address-book"></i> Vendedores Cadastrados</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Comissão Padrão</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaVendedores">
+            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Carregando vendedores...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================= ABA 3: REGISTRAR VENDA ================= -->
+    <div id="aba-vendas" class="escondido">
+      <div class="secao">
+        <h3><i class="fa-solid fa-cart-arrow-down" style="color: var(--accent);"></i> Registrar Nova Venda</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <div>
+            <label>Selecione o Vendedor:</label>
+            <select id="vendaVendedor"></select>
+          </div>
+          <div>
+            <label>Selecione o Produto:</label>
+            <select id="vendaProduto" onchange="atualizarPrecoVenda()"></select>
+          </div>
+          <div>
+            <label>Quantidade Vendida:</label>
+            <input type="number" id="vendaQtd" value="1" min="1">
+          </div>
+          <div>
+            <label>Preço Un. (R$):</label>
+            <input type="number" id="vendaPrecoUn" step="0.01" readonly style="background: #E2E8F0; cursor: not-allowed;">
+          </div>
+        </div>
+        <button class="btn-blue" onclick="concluirVenda()" style="margin-top: 10px;"><i class="fa-solid fa-check"></i> Concluir Venda</button>
+      </div>
+    </div>
+
+    <!-- ================= ABA 4: RELATÓRIOS & COMISSÕES ================= -->
+    <div id="aba-relatorio" class="escondido">
+      <div class="resumo-cards">
+        <div class="box">
+          <h4>Total em Vendas</h4>
+          <p id="totalVendasValor" style="color: var(--accent);">R$ 0,00</p>
+        </div>
+        <div class="box">
+          <h4>Total de Comissões</h4>
+          <p id="totalComissoesValor" style="color: var(--warning);">R$ 0,00</p>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Vendas</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Vendedor</th>
+              <th>Produto</th>
+              <th>Qtd</th>
+              <th>Total Venda</th>
+              <th>Comissão</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaHistoricoVendas">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Carregando histórico...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const FIREBASE_URL = "https://cliente-app-78a78-default-rtdb.firebaseio.com";
+    let usuarioLogadoKey = null;
+    let monitorSessaoInterval = null;
+
+    let produtosGlobal = {};
+    let vendedoresGlobal = {};
+
+    // --- CONTROLE DAS ABAS DE LOGIN ---
+    function mudarAbaLogin(aba) {
+      document.getElementById("msgErro").classList.add("escondido");
+      
+      const tab1 = document.getElementById("tab1");
+      const tab2 = document.getElementById("tab2");
+      const formLogin = document.getElementById("form-login");
+      const formCadastro = document.getElementById("form-cadastro");
+
+      if(aba === 'login') {
+        formLogin.classList.remove("escondido");
+        formCadastro.classList.add("escondido");
+        tab1.classList.add("ativa");
+        tab2.classList.remove("ativa");
+      } else {
+        formLogin.classList.add("escondido");
+        formCadastro.classList.remove("escondido");
+        tab1.classList.remove("ativa");
+        tab2.classList.add("ativa");
+      }
+    }
+
+    // --- NAVEGAÇÃO INTERNA DO APP ---
+    function mudarAbaApp(aba) {
+      const abas = ['estoque', 'vendedores', 'vendas', 'relatorio'];
+      abas.forEach(a => {
+        document.getElementById(`aba-${a}`).classList.add("escondido");
+        document.getElementById(`menu${a.charAt(0).toUpperCase() + a.slice(1)}`).classList.remove("ativa");
+      });
+
+      document.getElementById(`aba-${aba}`).classList.remove("escondido");
+      document.getElementById(`menu${aba.charAt(0).toUpperCase() + aba.slice(1)}`).classList.add("ativa");
+
+      if(aba === 'estoque') carregarEstoque();
+      if(aba === 'vendedores') carregarVendedores();
+      if(aba === 'vendas') prepararTelaVendas();
+      if(aba === 'relatorio') carregarRelatorios();
+    }
+
+    // --- AUTENTICAÇÃO E ATIVAÇÃO ---
+    async function cadastrarEAtivar() {
+      const codigo = document.getElementById("cadCodigo").value.trim().toUpperCase();
+      const login = document.getElementById("cadLogin").value.trim();
+      const senha = document.getElementById("cadSenha").value.trim();
+      const msgErro = document.getElementById("msgErro");
+
+      msgErro.classList.add("escondido");
+
+      if(!codigo || !login || !senha) {
+        msgErro.innerText = "Preencha Código, Usuário e Senha!";
+        msgErro.classList.remove("escondido");
+        return;
+      }
+
+      try {
+        const resCod = await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`);
+        const dadosCod = await resCod.json();
+
+        if(!dadosCod || dadosCod.usado) {
+          msgErro.innerText = "❌ Código inválido ou já utilizado!";
+          msgErro.classList.remove("escondido");
+          return;
+        }
+
+        const expiraEm = new Date();
+        expiraEm.setDate(expiraEm.getDate() + (dadosCod.dias || 30));
+
+        const userKey = login.replace(/[^a-zA-Z0-9]/g, "_");
+        await fetch(`${FIREBASE_URL}/usuarios/${userKey}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            login: login,
+            senha: senha,
+            status: "ativo",
+            expiraEm: expiraEm.toISOString()
+          })
+        });
+
+        await fetch(`${FIREBASE_URL}/codigos_ativacao/${codigo}.json`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usado: true, usadoPor: login })
+        });
+
+        alert("Conta criada com sucesso! Faça login para continuar.");
+        document.getElementById("loginUsuario").value = login;
+        mudarAbaLogin('login');
+
+      } catch(e) {
+      
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background: #f1f5f9; margin: 0; padding: 15px; color: #1e293b; -webkit-user-select: none; user-select: none; }
